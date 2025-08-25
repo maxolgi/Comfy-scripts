@@ -1,0 +1,22 @@
+import torch
+from safetensors.torch import load_file, save_file
+import os
+
+def convert_to_bf16(input_path):
+    base, ext = os.path.splitext(input_path)
+    output_path = f"{base}_bf16{ext}"
+    print(f"Loading {input_path}...")
+    state_dict = load_file(input_path, device="cpu")
+    print("Converting floating-point tensors to bfloat16...")
+    for k, v in state_dict.items():
+        if torch.is_floating_point(v):
+            state_dict[k] = v.to(dtype=torch.bfloat16)
+    print(f"Saving to {output_path}...")
+    save_file(state_dict, output_path)
+    print(f"✅ Saved bfloat16 version to {output_path}")
+
+# Convert text encoder
+convert_to_bf16("/workspace/ComfyUI/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors")
+
+# Convert VAE
+convert_to_bf16("/workspace/ComfyUI/models/vae/qwen_image_vae.safetensors")
