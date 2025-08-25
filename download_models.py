@@ -121,6 +121,7 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
     temp_paths = []
     try:
         temp_paths = pool.map(download_model, models_with_overwrite)
+        pool.close()
     except KeyboardInterrupt:
         print("Interrupted by user.")
         pool.terminate()
@@ -144,7 +145,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Download models from ComfyUI workflow JSON")
     parser.add_argument('workflow_path', nargs='?', default=None, help="Path to the workflow JSON file")
     parser.add_argument('--directory', type=str, default=None, help="Directory containing multiple workflow JSON files")
-    parser.add_argument('--parallel', type=int, default=10, help="Number of parallel downloads (default: 10)")
+    parser.add_argument('--parallel', type=int, default=1, help="Number of parallel downloads (default: 1)")
     parser.add_argument('--keep_temp', action='store_true', help="Keep the /models_temp directory and files (default: False)")
     parser.add_argument('--overwrite', action='store_true', help="Force overwrite if model exists in target (default: False)")
     args = parser.parse_args()
