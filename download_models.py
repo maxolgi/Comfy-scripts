@@ -17,15 +17,18 @@ os.environ['HF_HOME'] = HF_HOME_DIR
 os.environ['HF_HUB_CACHE'] = HF_HUB_CACHE_DIR
 
 def download_model(model_info):
-    repo_id, filename, subfolder, local_subdir, url = model_info
+    repo_id, filename, subfolder, local_subdir, url, overwrite = model_info
     os.makedirs(MODELS_TEMP_DIR, exist_ok=True)
     local_dir = os.path.join(COMFYUI_MODELS_DIR, local_subdir)
     os.makedirs(local_dir, exist_ok=True)
+    final_path = os.path.join(local_dir, filename)
+    if os.path.exists(final_path) and not overwrite:
+        print(f"Skipping existing {filename} in {local_dir}")
+        return None
     # Download to temp
     temp_path = hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder, local_dir=MODELS_TEMP_DIR)
     print(f"Downloaded {filename} from {repo_id} (subfolder: {subfolder}) to {temp_path}")
     # Move to final
-    final_path = os.path.join(local_dir, filename)
     shutil.move(temp_path, final_path)
     print(f"Moved {filename} to {final_path}")
     return temp_path  # Return temp_path for potential keeping
@@ -54,19 +57,36 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                 models_set.add(model_tuple)
                 urls_list.append(url)
 
-def main(workflow_path, parallel, keep_temp):
-    with open(workflow_path, 'r') as f:
-        workflow = json.load(f)
+def main(workflow_path, directory, parallel, keep_temp, overwrite):
     models_set = set()
     urls_list = []
     warnings = []
-    # Extract from main nodes
-    extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
-    # Extract from subgraphs
-    definitions = workflow.get('definitions', {})
-    subgraphs = definitions.get('subgraphs', [])
-    for sg in subgraphs:
-        extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
+    if directory:
+        json_files = [f for f in os.listdir(directory) if f.endswith('.json')]
+        for json_file in json_files:
+            path = os.path.join(directory, json_file)
+            with open(path, 'r') as f:
+                workflow = json.load(f)
+            # Extract from main nodes
+            extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
+            # Extract from subgraphs
+            definitions = workflow.get('definitions', {})
+            subgraphs = definitions.get('subgraphs', [])
+            for sg in subgraphs:
+                extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
+    elif workflow_path:
+        with open(workflow_path, 'r') as f:
+            workflow = json.load(f)
+        # Extract from main nodes
+        extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
+        # Extract from subgraphs
+        definitions = workflow.get('definitions', {})
+        subgraphs = definitions.get('subgraphs', [])
+        for sg in subgraphs:
+            extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
+    else:
+        raise ValueError("Must provide either workflow_path or --directory")
+    
     models = list(models_set)
     # Print all models found
     print("All models found:")
@@ -81,13 +101,15 @@ def main(workflow_path, parallel, keep_temp):
         print("\nWarnings:")
         for warn in warnings:
             print(f"- {warn}")
+    # Prepare models with overwrite
+    models_with_overwrite = [(repo_id, filename, subfolder, local_subdir, url, overwrite) for repo_id, filename, subfolder, local_subdir, url in models]
     # Parallel download
     with Pool(processes=parallel) as pool:
-        temp_paths = pool.map(download_model, models)
+        temp_paths = pool.map(download_model, models_with_overwrite)
     # Handle keep_temp
     if not keep_temp:
         for temp_path in temp_paths:
-            if os.path.exists(temp_path):
+            if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
                 print(f"Deleted temp file: {temp_path}")
         if os.path.exists(MODELS_TEMP_DIR) and not os.listdir(MODELS_TEMP_DIR):
@@ -96,8 +118,10 @@ def main(workflow_path, parallel, keep_temp):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Download models from ComfyUI workflow JSON")
-    parser.add_argument('workflow_path', type=str, help="Path to the workflow JSON file")
+    parser.add_argument('workflow_path', nargs='?', default=None, help="Path to the workflow JSON file")
+    parser.add_argument('--directory', type=str, default=None, help="Directory containing multiple workflow JSON files")
     parser.add_argument('--parallel', type=int, default=10, help="Number of parallel downloads (default: 10)")
     parser.add_argument('--keep_temp', action='store_true', help="Keep the /models_temp directory and files (default: False)")
+    parser.add_argument('--overwrite', action='store_true', help="Force overwrite if model exists in target (default: False)")
     args = parser.parse_args()
-    main(args.workflow_path, args.parallel, args.keep_temp)
+    main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite)
