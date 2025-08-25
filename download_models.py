@@ -4,7 +4,6 @@ from multiprocessing import Pool
 import argparse
 import os
 import shutil
-import sys
 
 # Define all paths at the top
 WORKSPACE_DIR = '/'
@@ -59,9 +58,6 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                 urls_list.append(url)
 
 def main(workflow_path, directory, parallel, keep_temp, overwrite):
-    if not workflow_path and not directory:
-        parser.print_help()
-        sys.exit(0)
     models_set = set()
     urls_list = []
     warnings = []
@@ -78,7 +74,7 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
             subgraphs = definitions.get('subgraphs', [])
             for sg in subgraphs:
                 extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
-    if workflow_path:
+    elif workflow_path:
         with open(workflow_path, 'r') as f:
             workflow = json.load(f)
         # Extract from main nodes
@@ -88,6 +84,8 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
         subgraphs = definitions.get('subgraphs', [])
         for sg in subgraphs:
             extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
+    else:
+        raise ValueError("Must provide either workflow_path or --directory")
     
     models = list(models_set)
     # Print all models found
@@ -103,35 +101,11 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
         print("\nWarnings:")
         for warn in warnings:
             print(f"- {warn}")
-    # Check skipped models
-    skipped = []
-    for repo_id, filename, subfolder, local_subdir, url in models:
-        local_dir = os.path.join(COMFYUI_MODELS_DIR, local_subdir)
-        final_path = os.path.join(local_dir, filename)
-        if os.path.exists(final_path) and not overwrite:
-            skipped.append((repo_id, filename, subfolder, local_subdir, url))
-    if skipped:
-        print("\nModels that will not be downloaded (exist):")
-        for model in skipped:
-            print(f"- Filename: {model[1]}, Repo: {model[0]}, Subfolder: {model[2]}, Directory: {model[3]}, URL: {model[4]}")
     # Prepare models with overwrite
     models_with_overwrite = [(repo_id, filename, subfolder, local_subdir, url, overwrite) for repo_id, filename, subfolder, local_subdir, url in models]
     # Parallel download
-    pool = Pool(processes=parallel)
-    temp_paths = []
-    try:
+    with Pool(processes=parallel) as pool:
         temp_paths = pool.map(download_model, models_with_overwrite)
-    except KeyboardInterrupt:
-        print("Interrupted by user.")
-        pool.terminate()
-        if not keep_temp and os.path.exists(MODELS_TEMP_DIR):
-            shutil.rmtree(MODELS_TEMP_DIR, ignore_errors=True)
-            print(f"Removed temporary directory: {MODELS_TEMP_DIR}")
-        sys.exit(1)
-    else:
-        pool.close()
-    finally:
-        pool.join()
     # Handle keep_temp
     if not keep_temp:
         for temp_path in temp_paths:
@@ -146,7 +120,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Download models from ComfyUI workflow JSON")
     parser.add_argument('workflow_path', nargs='?', default=None, help="Path to the workflow JSON file")
     parser.add_argument('--directory', type=str, default=None, help="Directory containing multiple workflow JSON files")
-    parser.add_argument('--parallel', type=int, default=1, help="Number of parallel downloads (default: 1)")
+    parser.add_argument('--parallel', type=int, default=10, help="Number of parallel downloads (default: 10)")
     parser.add_argument('--keep_temp', action='store_true', help="Keep the /models_temp directory and files (default: False)")
     parser.add_argument('--overwrite', action='store_true', help="Force overwrite if model exists in target (default: False)")
     args = parser.parse_args()
