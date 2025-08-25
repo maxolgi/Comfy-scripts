@@ -1,0 +1,48 @@
+---
+
+**1️⃣ On the old host — show each key’s contents**  
+```bash
+cat ~/.ssh/id_ed25519
+```
+(copy everything in this file — this is the **private key**, so keep it safe)  
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+(copy this too — it’s safe to share publicly, but still handle with care)  
+
+---
+
+**2️⃣ On the new host — create the files with `vi`**  
+
+- **Private key**:  
+```bash
+mkdir -p ~/.ssh
+vi ~/.ssh/id_ed25519
+```
+Paste the **private key** exactly as it appeared, save, and exit.
+
+- **Public key**:  
+```bash
+vi ~/.ssh/id_ed25519.pub
+```
+Paste the **public key** text, save, and exit.
+
+---
+
+**3️⃣ Fix the permissions**  
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+```
+
+---
+
+**4️⃣ Test it out**  
+```bash
+ssh -T git@github.com
+```
+If you see a greeting from GitHub with your username, you’re set.
+
+---
