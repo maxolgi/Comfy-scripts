@@ -4,6 +4,7 @@ from multiprocessing import Pool
 import argparse
 import os
 import shutil
+import sys
 
 # Define all paths at the top
 WORKSPACE_DIR = '/'
@@ -48,8 +49,9 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                     continue
                 repo_base = parts[0].split('https://huggingface.co/')[1]
                 repo_path = parts[1]
-                filename = repo_path.split('/')[-1]
-                subfolder = '/'.join(repo_path.split('/')[:-1])
+                clean_repo_path = repo_path.split('?')[0]
+                filename = clean_repo_path.split('/')[-1]
+                subfolder = '/'.join(clean_repo_path.split('/')[:-1])
                 local_subdir = m.get('directory', '')
                 if not local_subdir:
                     warnings.append(f"Model {filename} missing directory")
@@ -58,6 +60,9 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                 urls_list.append(url)
 
 def main(workflow_path, directory, parallel, keep_temp, overwrite):
+    if not workflow_path and not directory:
+        parser.print_help()
+        sys.exit(0)
     models_set = set()
     urls_list = []
     warnings = []
@@ -74,7 +79,7 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
             subgraphs = definitions.get('subgraphs', [])
             for sg in subgraphs:
                 extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
-    elif workflow_path:
+    if workflow_path:
         with open(workflow_path, 'r') as f:
             workflow = json.load(f)
         # Extract from main nodes
@@ -84,8 +89,6 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
         subgraphs = definitions.get('subgraphs', [])
         for sg in subgraphs:
             extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
-    else:
-        raise ValueError("Must provide either workflow_path or --directory")
     
     models = list(models_set)
     # Print all models found
@@ -101,11 +104,37 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
         print("\nWarnings:")
         for warn in warnings:
             print(f"- {warn}")
+    # Check skipped models
+    skipped = []
+    for repo_id, filename, subfolder, local_subdir, url in models:
+        local_dir = os.path.join(COMFYUI_MODELS_DIR, local_subdir)
+        final_path = os.path.join(local_dir, filename)
+        if os.path.exists(final_path) and not overwrite:
+            skipped.append((repo_id, filename, subfolder, local_subdir, url))
+    if skipped:
+        print("\nModels that will not be downloaded (exist):")
+        for model in skipped:
+            print(f"- Filename: {model[1]}, Repo: {model[0]}, Subfolder: {model[2]}, Directory: {model[3]}, URL: {model[4]}")
+    # Filter models to download
+    to_download = [model for model in models if model not in skipped]
     # Prepare models with overwrite
-    models_with_overwrite = [(repo_id, filename, subfolder, local_subdir, url, overwrite) for repo_id, filename, subfolder, local_subdir, url in models]
+    models_with_overwrite = [(repo_id, filename, subfolder, local_subdir, url, overwrite) for repo_id, filename, subfolder, local_subdir, url in to_download]
     # Parallel download
-    with Pool(processes=parallel) as pool:
+    pool = Pool(processes=parallel)
+    temp_paths = []
+    try:
         temp_paths = pool.map(download_model, models_with_overwrite)
+    except KeyboardInterrupt:
+        print("Interrupted by user.")
+        pool.terminate()
+        if not keep_temp and os.path.exists(MODELS_TEMP_DIR):
+            shutil.rmtree(MODELS_TEMP_DIR, ignore_errors=True)
+            print(f"Removed temporary directory: {MODELS_TEMP_DIR}")
+        sys.exit(1)
+    else:
+        pool.close()
+    finally:
+        pool.join()
     # Handle keep_temp
     if not keep_temp:
         for temp_path in temp_paths:
