@@ -1,0 +1,30 @@
+/bin/bash -c "cd /workspace && if [ ! -d 'ComfyUI' ]; then git clone https://github.com/comfyanonymous/ComfyUI; else cd /workspace/ComfyUI ; fi && cd /workspace/ComfyUI && python3 -m pip install --upgrade pip && pip install -r requirements.txt && if [ ! -d '/workspace/ComfyUI/custom_nodes/ComfyUI-Manager' ]; then git clone https://github.com/ltdrdata/ComfyUI-Manager.git /workspace/ComfyUI/custom_nodes/ComfyUI-Manager; else cd /workspace/ComfyUI/custom_nodes/ComfyUI-Manager; fi && cd /workspace/ComfyUI/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt && cd ../.. && apt update && apt install -y nvtop vim iftop rsync && python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8888"
+
+
+&& cd ComfyUI && python -m venv venvComfy && source venvComfy/bin/activate && python -m pip install
+
+
+cd /workspace/ComfyUI
+python3 -m venv venvComfy && source venvComfy/bin/activate
+python3 -m pip install --upgrade pip
+pip install -r requirements.txt 
+git clone https://github.com/ltdrdata/ComfyUI-Manager.git /workspace/ComfyUI/custom_nodes/ComfyUI-Manager
+cd /workspace/ComfyUI/custom_nodes/ComfyUI-Manager
+pip install -r requirements.txt && cd ../.. 
+python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8888
+
+#audio
+cd /workspace/ComfyUI/models/text_encoders/
+wget https://huggingface.co/ComfyUI-Wiki/t5-base/resolve/main/t5-base.safetensors 
+cd ../checkpoints
+wget https://huggingface.co/Comfy-Org/stable-audio-open-1.0_repackaged/resolve/main/stable-audio-open-1.0.safetensors 
+wget https://huggingface.co/Comfy-Org/ACE-Step_ComfyUI_repackaged/resolve/main/all_in_one/ace_step_v1_3.5b.safetensors 
+#image
+cd /workspace/ComfyUI/models/vae
+wget https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors 
+cd ../text_encoders/
+wget https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors 
+cd ../loras/
+wget https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors 
+cd ../diffusion_models/
+wget https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors 
