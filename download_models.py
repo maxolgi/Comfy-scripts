@@ -121,7 +121,6 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
     temp_paths = []
     try:
         temp_paths = pool.map(download_model, models_with_overwrite)
-        pool.close()
     except KeyboardInterrupt:
         print("Interrupted by user.")
         pool.terminate()
@@ -129,6 +128,8 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
             shutil.rmtree(MODELS_TEMP_DIR, ignore_errors=True)
             print(f"Removed temporary directory: {MODELS_TEMP_DIR}")
         sys.exit(1)
+    else:
+        pool.close()
     finally:
         pool.join()
     # Handle keep_temp
