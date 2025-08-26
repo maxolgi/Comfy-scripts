@@ -69,7 +69,7 @@ workflow_api = {
     # Note: Other nodes like 60,61 bypassed; 64,68 for repainting (disabled); 48,73 notes
 }
 
-server_address = '127.0.0.1:8188'
+server_address = '127.0.0.1:8888'
 
 async def generate_audio(params):
     client_id = str(uuid.uuid4())
