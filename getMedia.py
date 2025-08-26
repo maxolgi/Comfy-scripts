@@ -7,7 +7,7 @@ from urllib3.util.retry import Retry
 
 server_url = sys.argv[1]
 download_dir = "downloaded_renders"
-poll_interval = 10  # seconds
+poll_interval = 1  # seconds
 
 os.makedirs(download_dir, exist_ok=True)
 downloaded = set()  # Track (filename, subfolder, typ) tuples
