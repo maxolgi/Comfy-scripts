@@ -16,7 +16,7 @@ def convert_to_bf16(input_path):
     print(f"✅ Saved bfloat16 version to {output_path}")
 
 # Convert text encoder
-convert_to_bf16("/workspace/ComfyUI/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors")
+convert_to_bf16("/ComfyUI/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors")
 
 # Convert VAE
-convert_to_bf16("/workspace/ComfyUI/models/vae/qwen_image_vae.safetensors")
+convert_to_bf16("/ComfyUI/models/vae/qwen_image_vae.safetensors")
