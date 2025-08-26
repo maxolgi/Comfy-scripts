@@ -7,6 +7,35 @@ from nicegui import ui, app
 from datetime import datetime
 import os
 from starlette.middleware.sessions import SessionMiddleware
+import os
+import sys
+
+def daemonize():
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as e:
+        sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+        sys.exit(1)
+    os.chdir("/")
+    os.setsid()
+    os.umask(0)
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as e:
+        sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+        sys.exit(1)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    si = open(os.devnull, 'r')
+    so = open(os.devnull, 'a+')
+    se = open(os.devnull, 'a+')
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
 
 # API format workflow (converted from provided graph JSON)
 workflow_api = {
@@ -222,4 +251,5 @@ async def main():
             ui.label('Coming soon')
 
 app.add_middleware(SessionMiddleware, secret_key='your_secret_key')
+daemonize()
 ui.run(dark=True)
