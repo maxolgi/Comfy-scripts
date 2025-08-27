@@ -423,7 +423,7 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
     
     async with aiohttp.ClientSession() as session:
         history = None
-        for attempt in range(60):
+        for attempt in range(30):
             if DEBUG:
                 print("GET /history/", prompt_id, f"attempt {attempt+1}")
             async with session.get(f"http://{server_address}/history/{prompt_id}") as response:
@@ -441,7 +441,7 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
                         print("History fetch error:", str(e))
             await asyncio.sleep(1)
         if history is None:
-            raise ValueError(f"History for prompt_id {prompt_id} not found after 60 attempts")
+            raise ValueError(f"History for prompt_id {prompt_id} not found after 30 attempts")
 
     node_id = {
         'mp3': '59' if not is_simple else '85',
@@ -468,197 +468,6 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
 
 app.add_static_files('/media', 'media')
 
-genres_subgenres = {
-    "Alternative": [
-        "Art Punk",
-        "Alternative Rock",
-        "Britpunk",
-        "College Rock",
-        "Crossover Thrash",
-        "Crust Punk",
-        "Emotional Hardcore",
-        "Experimental Rock",
-        "Folk Punk",
-        "Goth / Gothic Rock",
-        "Grunge",
-        "Hardcore Punk",
-        "Hard Rock",
-        "Indie Rock",
-        "Lo-fi",
-        "Musique Concrète",
-        "New Wave",
-        "Progressive Rock",
-        "Punk",
-        "Shoegaze",
-        "Steampunk"
-    ],
-    "Anime": [],
-    "Blues": [
-        "Acoustic Blues",
-        "African Blues",
-        "Blues Rock",
-        "Blues Shouter",
-        "Bass",
-        "British Blues",
-        "Canadian Blues",
-        "Chicago Blues",
-        "Classic Blues",
-        "Classic Female Blues",
-        "Contemporary Blues",
-        "Contemporary R&B",
-        "Country Blues",
-        "Dark Blues",
-        "Delta Blues",
-        "Detroit Blues",
-        "Doom Blues",
-        "Electric Blues",
-        "Folk Blues",
-        "Gospel Blues",
-        "Harmonica Blues",
-        "Hill Country Blues",
-        "Hokum Blues",
-        "Jazz Blues",
-        "Jump Blues",
-        "Kansas City Blues",
-        "Louisiana Blues",
-        "Memphis Blues",
-        "Modern Blues",
-        "New Orlean Blues",
-        "NY Blues",
-        "Piano Blues",
-        "Piedmont Blues",
-        "Punk Blues",
-        "Ragtime Blues",
-        "Rhythm Blues",
-        "Soul Blues",
-        "St. Louis Blues",
-        "Swamp Blues",
-        "Texas Blues",
-        "Urban Blues",
-        "Vandeville",
-        "West Coast Blues",
-        "Zydeco"
-    ],
-    "Children’s Music": [
-        "Lullabies",
-        "Sing-Along",
-        "Stories"
-    ],
-    "Classical": [
-        "Avant-Garde",
-        "Ballet",
-        "Baroque",
-        "Cantata",
-        "Chamber Music",
-        "String Quartet",
-        "Chant",
-        "Choral",
-        "Classical Crossover",
-        "Concerto",
-        "Concerto Grosso",
-        "Contemporary Classical",
-        "Early Music",
-        "Expressionist",
-        "High Classical",
-        "Impressionist",
-        "Mass Requiem",
-        "Medieval",
-        "Minimalism",
-        "Modern Composition",
-        "Modern Classical",
-        "Opera",
-        "Oratorio",
-        "Orchestral",
-        "Organum",
-        "Renaissance",
-        "Romantic (early period)",
-        "Romantic (later period)",
-        "Sonata",
-        "Symphonic",
-        "Symphony",
-        "Twelve-tone",
-        "Wedding Music"
-    ],
-    "Comedy": [
-        "Novelty",
-        "Parody Music",
-        "Stand-up Comedy",
-        "Vaudeville"
-    ],
-    "Commercial": [
-        "Jingles",
-        "TV Themes"
-    ],
-    "Country": [
-        "Alternative Country",
-        "Americana",
-        "Australian Country",
-        "Bakersfield Sound",
-        "Bluegrass",
-        "Progressive Bluegrass",
-        "Reactionary Bluegrass",
-        "Blues Country",
-        "Cajun Fiddle Tunes",
-        "Christian Country",
-        "Classic Country",
-        "Close Harmony",
-        "Contemporary Bluegrass",
-        "Contemporary Country",
-        "Country Gospel",
-        "Country Pop",
-        "Country Rap",
-        "Country Rock",
-        "Country Soul",
-        "Cowboy / Western",
-        "Cowpunk",
-        "Dansband",
-        "Honky Tonk",
-        "Franco-Country",
-        "Gulf and Western",
-        "Hellbilly Music",
-        "Instrumental Country",
-        "Lubbock Sound",
-        "Nashville Sound",
-        "Neotraditional Country",
-        "Outlaw Country",
-        "Progressive",
-        "Psychobilly / Punkabilly",
-        "Red Dirt",
-        "Sertanejo",
-        "Texas County",
-        "Traditional Bluegrass",
-        "Traditional Country",
-        "Truck-Driving Country",
-        "Urban Cowboy",
-        "Western Swing",
-        "Zydeco"
-    ],
-    "Dance": [
-        "Club / Club Dance",
-        "Breakcore",
-        "Breakbeat / Breakstep",
-        "4-Beat",
-        "Acid Breaks",
-        "Baltimore Club",
-        "Big Beat",
-        "Breakbeat Hardcore",
-        "Broken Beat",
-        "Florida Breaks"
-    ]
-}
-
-moods_list = sorted(set([
-    'action', 'adventurous', 'aggressive', 'airy', 'ambient', 'angelic', 'angry', 'anthemic', 'anxious', 'arcade', 'atmospheric', 'beats', 'beautiful', 'bizarre', 'bold', 'bouncy', 'bright', 'brooding', 'calm', 'campy', 'carefree', 'cartoon', 'celebratory', 'chaotic', 'cheerful', 'childish', 'chill', 'cinematic', 'climactic', 'cold', 'comedy', 'confident', 'confrontational', 'cool', 'creepy', 'curious', 'dangerous', 'dark', 'defiant', 'delicate', 'determined', 'disturbing', 'dramatic', 'dreamy', 'driving', 'drunk', 'dynamic', 'earnest', 'easygoing', 'eccentric', 'edgy', 'eerie', 'elegant', 'emotional', 'empowering', 'energetic', 'epic', 'ethereal', 'euphoric', 'excited', 'exotic', 'explosive', 'fantasy', 'fast', 'fearful', 'feelgood', 'festive', 'fierce', 'flowing', 'flirty', 'fragile', 'free', 'friendly', 'fun', 'funky', 'funny', 'futuristic', 'gentle', 'gloomy', 'grand', 'gritty', 'groovy', 'happy', 'haunting', 'heartbroken', 'heartwarming', 'heavenly', 'heroic', 'hopeful', 'humorous', 'hypnotic', 'innocent', 'inspirational', 'intense', 'intimate', 'introspective', 'joyful', 'laidback', 'lazy', 'light', 'lively', 'lonely', 'longing', 'loving', 'magical', 'majestic', 'marching', 'mean', 'mechanical', 'meditative', 'melancholic', 'mellow', 'menacing', 'mischievous', 'moody', 'motivational', 'mournful', 'mysterious', 'mystical', 'naughty', 'nervous', 'noble', 'nostalgic', 'optimistic', 'passionate', 'patriotic', 'peaceful', 'playful', 'poignant', 'positive', 'powerful', 'proud', 'psychedelic', 'pulsing', 'pumped', 'quirky', 'rebellious', 'reflective', 'regal', 'relaxed', 'repetitive', 'resolute', 'retro', 'romantic', 'rowdy', 'sad', 'sarcastic', 'scary', 'sci-fi', 'seductive', 'sentimental', 'serious', 'sexy', 'shimmering', 'sick', 'silly', 'sinister', 'slow', 'smooth', 'sneaky', 'solemn', 'somber', 'soothing', 'sophisticated', 'soulful', 'spacey', 'sparkling', 'spirited', 'spiritual', 'spooky', 'strong', 'stupid', 'stylish', 'sublime', 'successful', 'summery', 'sunny', 'suspenseful', 'swaggering', 'sweeping', 'sweet', 'swinging', 'technical', 'tender', 'tense', 'theatrical', 'thoughtful', 'thrilling', 'touching', 'tough', 'tragic', 'tranquil', 'triumphant', 'uplifting', 'urgent', 'vibrant', 'violent', 'warm', 'whimsical', 'wicked', 'wild', 'wistful', 'witty', 'worried', 'yearning'
-]))
-
-instruments_list = sorted(set([
-    'acme siren', 'accordina', 'accordion', 'accordola', 'adungu', 'aeolian harp', 'ajaeng', 'agida', 'agogô', 'agung', 'agung a tamlang', 'ajaeng', 'akkordolia', 'alarm', 'alboka', 'alfaia', 'algaita', 'almpfeiferl', 'alphorn', 'alto horn', 'amadinda', 'angélique', 'angklung', 'animal vocalization', 'anvil', 'apinti', 'appalachian dulcimer', 'apito', 'arobapá', 'arghul', 'arbajo', 'archlute', 'armónico', 'arpeggione', 'ashiko', 'atabaque', 'atenteben', 'aulochrome', 'autoharp', 'aztec death whistle', 'babendil', 'baboula', 'babendil', 'bamboo slit drum', 'bandola', 'bandolin', 'bandolón', 'bandora', 'bandura', 'bandurria', 'banhu', 'banjo', 'banjo ukulele', 'bass drum', 'bass voice', 'bassoon', 'batá drum', 'bawu', 'bayan', 'bazooka', 'beatboxing', 'bedug', 'bell', 'berimbau', 'bifora', 'bipa', 'birbynė', 'biwa', 'blul', 'blown bottle', 'bodhrán', 'boobam', 'boatswain\'s call', 'bongo drums', 'bordonua', 'bouzouki', 'buccina', 'bugle', 'bukkehorn', 'bullroarer', 'buzuq', 'cabasa', 'cajón', 'calliope', 'candombe', 'cariba', 'carillon', 'castanets', 'castrato', 'cavaquinho', 'caxirola', 'caxixi', 'cello', 'chácaras', 'chalumeau', 'chapman stick', 'charangos', 'chenda', 'chimes', 'chitarra battente', 'chitarra italiana', 'choghur', 'cimbalom', 'cimboa', 'citole', 'cittern', 'clarinets', 'clarytone', 'clapstick', 'claves', 'clavichord', 'clavinet', 'concertina', 'conch', 'conga', 'contra-drone harpa', 'contrabassoon', 'contraforte', 'contraguitar', 'cornet', 'cornamuse', 'cornett', 'cornu', 'corrugaphone', 'countertenor', 'cowbell', 'crwth', 'crotales', 'crumhorn', 'cuatro', 'cuíca', 'culo\'e puya', 'cultrun', 'cymbal', 'cymbals', 'dabakan', 'daf', 'damaru', 'danso', 'davul', 'dayereh', 'death growl', 'den-den daiko', 'dhak', 'dhimay', 'dihu', 'diddley bow', 'didgeridoo', 'didjeribone', 'diple', 'dizi', 'djembe', 'dhol', 'dholak', 'dimdi', 'dihu', 'dobro', 'dollu', 'domra', 'doshpuluur', 'dotara', 'double bass', 'dourou', 'drum kit', 'duduk', 'dulcian', 'dulcimer', 'dulzaina', 'dung-dkar', 'dunun', 'dutar', 'duxianqin', 'dzhamara', 'ekwe', 'ektara', 'english horn', 'erhu', 'erxian', 'erikundi', 'esraj', 'euphonium', 'fife', 'firecracker', 'firebird', 'fiscorn', 'flageolet', 'flatt trumpet', 'flexatone', 'flugelhorn', 'flumpet', 'flutina', 'flute', 'folgerphone', 'fiscorn', 'french horn', 'fujara', 'gaida'
-]))
-
-descriptors_list = sorted(set([
-    '4-beat', 'acid breaks', 'attitude', 'baltimore club', 'big beat', 'breakbeat hardcore', 'broken beat', 'club / club dance', 'florida breaks', 'breakcore', 'breakbeat / breakstep', 'dark', 'dreamy', 'epic', 'happy', 'laid back', 'quirky', 'relax', 'running', 'suspense', 'uplifting'
-]))
-
 @ui.page('/')
 async def main():
     with ui.row().classes('w-full h-screen'):
@@ -672,7 +481,6 @@ async def main():
             with panels:
                 with ui.tab_panel('Simple'):
                     simple_prompt = ui.textarea(placeholder='Describe your song').classes('w-full bg-gray-800 text-white')
-                    ui.markdown("""Use sections like [verse], [chorus], [bridge]. For non-English lyrics, prefix lines with [language_code] (e.g., [zh] for Chinese, [ja] for Japanese) and convert text to English characters (e.g., pinyin for Chinese). See multilingual support for details.""").classes('text-white')
                     async def simple_submit():
                         simple_progress.text = 'Generating... 0%'
                         simple_download_button.style('visibility: hidden')
@@ -811,37 +619,31 @@ async def main():
                                 filename_prefix = ui.input(label='Filename Prefix', value="audio/ComfyUI")
                                 format_select = ui.select(['mp3', 'flac', 'opus'], value='mp3', label='Format')
                                 quality = ui.select(['128k', '192k', '256k', '320k', 'V0'], value='320k', label='Quality')
-                    mode_radio = ui.radio(['t2m', 't2s', 'm2m'], value='t2s').props('inline').classes('text-white')
-                    with ui.row().classes('w-full items-center'):
-                        ui.label('♪ Lyrics').classes('text-white')
-                        mode_radio = ui.radio(['t2m', 't2s', 'm2m'], value='t2s').props('inline').classes('text-white mx-auto')
+                    ui.label('♪ Lyrics').classes('text-white')
                     lyrics = ui.textarea(placeholder='Add your own lyrics here', value=workflow_api["14"]["inputs"]["lyrics"]).classes('w-full bg-gray-800 text-white')
                     with ui.row():
                         ui.button('Auto').classes('bg-gray-800 text-white')  # Non-functional
                         ui.button('Write Lyrics').classes('bg-gray-800 text-white')  # Non-functional
-                        seconds = ui.number(label='Seconds', value=120)
+                        seconds = ui.number(label='Seconds', value=60)
                         lyrics_strength = ui.number(label='Lyrics Strength', value=0.99, format='%.2f')
                         instrumental = ui.switch('Instrumental').classes('text-white')
-                        song_mode = ui.radio(['By Line', 'Full Song'], value='By Line').classes('text-white')
+                        song_mode = ui.radio(['By Line', 'Full Song'], value='Full Song').classes('text-white')
                     ui.label('♪ Styles').classes('text-white')
-                    tags = ui.textarea(placeholder='Enter style tags', value="anime, cute female vocals, kawaii pop, j-pop, childish, piano, guitar, synthesizer, fast, happy, cheerful, lighthearted").classes('w-full bg-gray-800 text-white')
-                    with ui.row():
-                        with ui.column():
-                            genre_select = ui.select(options=list(genres_subgenres.keys()), label='Genre', multiple=True, clearable=True, with_input=True, new_value_mode='add-unique').on_value_change(lambda e: (tags.set_value(tags.value + (', ' if tags.value else '') + ', '.join(e.value)), subgenre_select.set_options(list(set(sum((genres_subgenres.get(g, []) for g in e.value), [])))), genre_select.clear()) if e.value else None)
-                            subgenre_select = ui.select(options=[], label='Subgenre', multiple=True, clearable=True, with_input=True, new_value_mode='add-unique').on_value_change(lambda e: (tags.set_value(tags.value + (', ' if tags.value else '') + ', '.join(e.value)), subgenre_select.clear()) if e.value else None)
-                        with ui.column():
-                            moods_select = ui.select(options=moods_list, label='Mood', multiple=True, clearable=True, with_input=True, new_value_mode='add-unique').on_value_change(lambda e: (tags.set_value(tags.value + (', ' if tags.value else '') + ', '.join(e.value)), moods_select.clear()) if e.value else None)
-                        with ui.column():
-                            instruments_select = ui.select(options=instruments_list, label='Instrument', multiple=True, clearable=True, with_input=True, new_value_mode='add-unique').on_value_change(lambda e: (tags.set_value(tags.value + (', ' if tags.value else '') + ', '.join(e.value)), instruments_select.clear()) if e.value else None)
-                        with ui.column():
-                            descriptors_select = ui.select(options=descriptors_list, label='Descriptor', multiple=True, clearable=True, with_input=True, new_value_mode='add-unique').on_value_change(lambda e: (tags.set_value(tags.value + (', ' if tags.value else '') + ', '.join(e.value)), descriptors_select.clear()) if e.value else None)
+                    tags = ui.textarea(placeholder='Enter style tags', value=workflow_api["14"]["inputs"]["tags"]).classes('w-full bg-gray-800 text-white')
+                    with ui.row().classes('flex-wrap'):
+                        ui.button('break up', on_click=lambda: tags.set_value(tags.value + ' break up')).classes('bg-gray-700 text-white rounded-full m-1')
+                        ui.button('country', on_click=lambda: tags.set_value(tags.value + ' country')).classes('bg-gray-700 text-white rounded-full m-1')
+                        ui.button('jazz', on_click=lambda: tags.set_value(tags.value + ' jazz')).classes('bg-gray-700 text-white rounded-full m-1')
+                        ui.button('dramatic layered soundscape', on_click=lambda: tags.set_value(tags.value + ' dramatic layered soundscape')).classes('bg-gray-700 text-white rounded-full m-1')
+                        ui.button('orchestra strings', on_click=lambda: tags.set_value(tags.value + ' orchestra strings')).classes('bg-gray-700 text-white rounded-full m-1')
+                        ui.button('exp', on_click=lambda: tags.set_value(tags.value + ' exp')).classes('bg-gray-700 text-white rounded-full m-1')
                     # Advanced Options
                     advanced_expansion = ui.expansion('Advanced Options').classes('w-full bg-gray-800 text-white')
                     with advanced_expansion:
                         exclude_styles = ui.input(label='Exclude styles', placeholder='Enter styles to exclude').classes('w-full')
                         vocal_gender = ui.select(['Male', 'Female'], value='Female', label='Vocal Gender').classes('w-full')
                         ui.label('Weirdness').classes('text-white')
-                        weirdness = ui.slider(min=0, max=100, value=25).classes('w-full')
+                        weirdness = ui.slider(min=0, max=100, value=50).classes('w-full')
                         ui.label('Style Influence').classes('text-white')
                         style_influence = ui.slider(min=0, max=100, value=50).classes('w-full')
                         ui.label('Vocal Volume').classes('text-white')
@@ -851,13 +653,13 @@ async def main():
                             shift = ui.number(label='Shift', value=5.0, format='%.1f')
                         with ui.row():
                             multiplier = ui.number(label='Multiplier', value=1.0, format='%.1f')
-                            seed = ui.number(label='Seed', value=247844496912620)
+                            seed = ui.number(label='Seed', value=810270844734026)
                             steps = ui.number(label='Steps', value=50)
                             cfg = ui.number(label='CFG', value=5)
                         with ui.row():
                             sampler_name = ui.select(['euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'dpm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'dpmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'ipndm', 'ipndm_v', 'deis', 'ddim', 'uni_pc', 'uni_pc_bh2'], value='euler', label='Sampler Name')
                             scheduler = ui.select(['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform'], value='simple', label='Scheduler')
-                            denoise = ui.number(label='Denoise', value=0.3)
+                            denoise = ui.number(label='Denoise', value=1)
 
 app.add_middleware(SessionMiddleware, secret_key='your_secret_key')
 if sys.platform != 'win32':
