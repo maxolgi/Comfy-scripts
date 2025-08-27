@@ -10,6 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 import sys
 import random
+import argparse
 
 DEBUG = True
 
@@ -662,6 +663,9 @@ async def main():
                             denoise = ui.number(label='Denoise', value=1)
 
 app.add_middleware(SessionMiddleware, secret_key='your_secret_key')
-if sys.platform != 'win32':
+parser = argparse.ArgumentParser()
+parser.add_argument('--daemon', action='store_true')
+args = parser.parse_args()
+if args.daemon and sys.platform != 'win32':
     daemonize()
 ui.run(dark=True)
