@@ -1,0 +1,2 @@
+#!/bin/bash
+cd / && if [ ! -d 'ComfyUI' ]; then git clone https://github.com/comfyanonymous/ComfyUI; else cd /ComfyUI ; fi && cd /ComfyUI && python -m pip install --upgrade pip && pip install -r requirements.txt && if [ ! -d '/ComfyUI/custom_nodes/ComfyUI-Manager' ]; then git clone https://github.com/ltdrdata/ComfyUI-Manager.git /ComfyUI/custom_nodes/ComfyUI-Manager; else cd /ComfyUI/custom_nodes/ComfyUI-Manager; fi && cd /ComfyUI/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt
