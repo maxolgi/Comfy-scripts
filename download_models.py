@@ -5,6 +5,11 @@ import argparse
 import os
 import shutil
 import sys
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+# Note: For --watch option, install watchdog via pip install watchdog
 
 # Define all paths at the top
 WORKSPACE_DIR = '/'
@@ -59,28 +64,14 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                 models_set.add(model_tuple)
                 urls_list.append(url)
 
-def main(workflow_path, directory, parallel, keep_temp, overwrite):
-    if not workflow_path and not directory:
-        parser.print_help()
-        sys.exit(0)
+def process_directory(directory, parallel, keep_temp, overwrite):
     models_set = set()
     urls_list = []
     warnings = []
-    if directory:
-        json_files = [f for f in os.listdir(directory) if f.endswith('.json')]
-        for json_file in json_files:
-            path = os.path.join(directory, json_file)
-            with open(path, 'r') as f:
-                workflow = json.load(f)
-            # Extract from main nodes
-            extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
-            # Extract from subgraphs
-            definitions = workflow.get('definitions', {})
-            subgraphs = definitions.get('subgraphs', [])
-            for sg in subgraphs:
-                extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
-    if workflow_path:
-        with open(workflow_path, 'r') as f:
+    json_files = [f for f in os.listdir(directory) if f.endswith('.json')]
+    for json_file in json_files:
+        path = os.path.join(directory, json_file)
+        with open(path, 'r') as f:
             workflow = json.load(f)
         # Extract from main nodes
         extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
@@ -145,6 +136,118 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite):
             os.rmdir(MODELS_TEMP_DIR)
             print(f"Removed empty {MODELS_TEMP_DIR} directory")
 
+def main(workflow_path, directory, parallel, keep_temp, overwrite, watch):
+    if not workflow_path and not directory:
+        parser.print_help()
+        sys.exit(0)
+    if watch and not directory:
+        print("Error: --watch requires --directory")
+        sys.exit(1)
+    
+    models_set = set()
+    urls_list = []
+    warnings = []
+    
+    if directory:
+        process_directory(directory, parallel, keep_temp, overwrite)
+    
+    if workflow_path:
+        with open(workflow_path, 'r') as f:
+            workflow = json.load(f)
+        # Extract from main nodes
+        extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
+        # Extract from subgraphs
+        definitions = workflow.get('definitions', {})
+        subgraphs = definitions.get('subgraphs', [])
+        for sg in subgraphs:
+            extract_models_from_nodes(sg.get('nodes', []), models_set, urls_list, warnings)
+        
+        models = list(models_set)
+        # Print all models found
+        print("All models found:")
+        for model in models:
+            print(f"- Filename: {model[1]}, Repo: {model[0]}, Subfolder: {model[2]}, Directory: {model[3]}, URL: {model[4]}")
+        # Print list of all URLs
+        print("\nAll URLs:")
+        for url in urls_list:
+            print(f"- {url}")
+        # Print warnings
+        if warnings:
+            print("\nWarnings:")
+            for warn in warnings:
+                print(f"- {warn}")
+        # Check skipped models
+        skipped = []
+        for repo_id, filename, subfolder, local_subdir, url in models:
+            local_dir = os.path.join(COMFYUI_MODELS_DIR, local_subdir)
+            final_path = os.path.join(local_dir, filename)
+            if os.path.exists(final_path) and not overwrite:
+                skipped.append((repo_id, filename, subfolder, local_subdir, url))
+        if skipped:
+            print("\nModels that will not be downloaded (exist):")
+            for model in skipped:
+                print(f"- Filename: {model[1]}, Repo: {model[0]}, Subfolder: {model[2]}, Directory: {model[3]}, URL: {model[4]}")
+        # Filter models to download
+        to_download = [model for model in models if model not in skipped]
+        # Prepare models with overwrite
+        models_with_overwrite = [(repo_id, filename, subfolder, local_subdir, url, overwrite) for repo_id, filename, subfolder, local_subdir, url in to_download]
+        # Parallel download
+        pool = Pool(processes=parallel)
+        temp_paths = []
+        try:
+            temp_paths = pool.map(download_model, models_with_overwrite)
+        except KeyboardInterrupt:
+            print("Interrupted by user.")
+            pool.terminate()
+            if not keep_temp and os.path.exists(MODELS_TEMP_DIR):
+                shutil.rmtree(MODELS_TEMP_DIR, ignore_errors=True)
+                print(f"Removed temporary directory: {MODELS_TEMP_DIR}")
+            sys.exit(1)
+        else:
+            pool.close()
+        finally:
+            pool.join()
+        # Handle keep_temp
+        if not keep_temp:
+            for temp_path in temp_paths:
+                if temp_path and os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    print(f"Deleted temp file: {temp_path}")
+            if os.path.exists(MODELS_TEMP_DIR) and not os.listdir(MODELS_TEMP_DIR):
+                os.rmdir(MODELS_TEMP_DIR)
+                print(f"Removed empty {MODELS_TEMP_DIR} directory")
+    
+    if watch:
+        class WorkflowHandler(FileSystemEventHandler):
+            def __init__(self, directory, parallel, keep_temp, overwrite):
+                self.directory = directory
+                self.parallel = parallel
+                self.keep_temp = keep_temp
+                self.overwrite = overwrite
+
+            def on_modified(self, event):
+                if event.src_path.endswith('.json'):
+                    print(f"Detected change in {event.src_path}, rerunning model download...")
+                    process_directory(self.directory, self.parallel, self.keep_temp, self.overwrite)
+
+            def on_created(self, event):
+                if event.src_path.endswith('.json'):
+                    print(f"Detected new file {event.src_path}, rerunning model download...")
+                    process_directory(self.directory, self.parallel, self.keep_temp, self.overwrite)
+
+        event_handler = WorkflowHandler(directory, parallel, keep_temp, overwrite)
+        observer = Observer()
+        observer.schedule(event_handler, path=directory, recursive=False)
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+            print("Watching stopped.")
+            sys.exit(0)
+        observer.join()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Download models from ComfyUI workflow JSON")
     parser.add_argument('workflow_path', nargs='?', default=None, help="Path to the workflow JSON file")
@@ -152,5 +255,6 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', type=int, default=1, help="Number of parallel downloads (default: 1)")
     parser.add_argument('--keep_temp', action='store_true', help="Keep the /models_temp directory and files (default: False)")
     parser.add_argument('--overwrite', action='store_true', help="Force overwrite if model exists in target (default: False)")
+    parser.add_argument('--watch', action='store_true', help="Watch the directory for changes and rerun on file add/change (requires --directory)")
     args = parser.parse_args()
-    main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite)
+    main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite, args.watch)
