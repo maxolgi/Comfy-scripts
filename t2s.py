@@ -528,15 +528,15 @@ async def main():
     with ui.row().classes('w-full h-screen'):
         # Main content
         with ui.column().classes('w-full bg-gray-900 p-4'):
-            with ui.row().classes('w-full items-center justify-between'):
-                tabs = ui.tabs().classes('flex-grow')
-                with tabs:
-                    ui.tab('Simple')
-                    ui.tab('Custom')
-                global_audio_player = ui.audio(src='').classes('w-1/2')
+            tabs = ui.tabs().classes('w-full')
+            with tabs:
+                ui.tab('Simple')
+                ui.tab('Custom')
             panels = ui.tab_panels(tabs, value='Simple').classes('w-full')  # Default to Simple
             with panels:
                 with ui.tab_panel('Simple'):
+                    with ui.row().classes('w-full justify-center'):
+                        simple_audio_player = ui.audio(src='').classes('w-1/2')
                     async def simple_submit():
                         simple_progress.text = 'Generating... 0%'
                         simple_download_button.style('visibility: hidden')
@@ -560,8 +560,8 @@ async def main():
                             app.storage.user['filename'] = filename
                             simple_progress.text = 'Done - Ready to download'
                             simple_download_button.style('visibility: visible')
-                            global_audio_player.src = f'/media/{mp3_filename}'
-                            global_audio_player.update()
+                            simple_audio_player.src = f'/media/{mp3_filename}'
+                            simple_audio_player.update()
                         except Exception as e:
                             simple_progress.text = f'Error: {str(e)}'
                     async def simple_download():
@@ -625,6 +625,8 @@ async def main():
                             simple_randomize_seed = ui.checkbox(value=True)
                             ui.label('Randomize Seed').classes('text-white')
                 with ui.tab_panel('Custom'):
+                    with ui.row().classes('w-full justify-center'):
+                        custom_audio_player = ui.audio(src='').classes('w-1/2')
                     async def submit():
                         progress.text = 'Generating... 0%'
                         download_button.style('visibility: hidden')
@@ -661,8 +663,8 @@ async def main():
                             app.storage.user['filename'] = filename
                             progress.text = 'Done - Ready to download'
                             download_button.style('visibility: visible')
-                            global_audio_player.src = f'/media/{mp3_filename}'
-                            global_audio_player.update()
+                            custom_audio_player.src = f'/media/{mp3_filename}'
+                            custom_audio_player.update()
                         except Exception as e:
                             progress.text = f'Error: {str(e)}'
                         finally:
