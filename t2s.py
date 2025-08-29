@@ -57,7 +57,7 @@ workflow_api = {
   },
   "17": {
     "inputs": {
-      "seconds": 60,
+      "seconds": 120,
       "batch_size": 1
     },
     "class_type": "EmptyAceStepLatentAudio"
@@ -264,7 +264,7 @@ workflow_api = {
   },
   "81": {
     "inputs": {
-      "seconds": 60,
+      "seconds": 47.6,
       "batch_size": 1
     },
     "class_type": "EmptyLatentAudio"
@@ -322,30 +322,6 @@ workflow_api = {
       ]
     },
     "class_type": "SaveAudioOpus"
-  },
-  "87": {
-    "inputs": {
-      "filename_prefix": "audio/ComfyUI_mp3",
-      "quality": "V0",
-      "audioUI": "",
-      "audio": [
-        "18",
-        0
-      ]
-    },
-    "class_type": "SaveAudioMP3"
-  },
-  "88": {
-    "inputs": {
-      "filename_prefix": "audio/ComfyUI_mp3",
-      "quality": "V0",
-      "audioUI": "",
-      "audio": [
-        "82",
-        0
-      ]
-    },
-    "class_type": "SaveAudioMP3"
   }
 }
 
@@ -360,7 +336,7 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
         # Stable Audio branch for Simple mode
         prompt["78"]["inputs"]["text"] = params["prompt"]
         # Remove ACE-specific nodes
-        del prompt["14"], prompt["44"], prompt["17"], prompt["51"], prompt["50"], prompt["49"], prompt["18"], prompt["59"], prompt["60"], prompt["61"], prompt["64"], prompt["68"], prompt["87"]
+        del prompt["14"], prompt["44"], prompt["17"], prompt["51"], prompt["50"], prompt["49"], prompt["18"], prompt["59"], prompt["60"], prompt["61"], prompt["64"], prompt["68"]
         prompt["76"]["inputs"]["positive"] = ["78", 0]
         prompt["76"]["inputs"]["negative"] = ["79", 0]
         prompt["76"]["inputs"]["latent_image"] = ["81", 0]
@@ -383,8 +359,6 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
             del prompt["83"], prompt["85"]
             prompt["86"]["inputs"]["filename_prefix"] = params["filename_prefix"]
             prompt["86"]["inputs"]["quality"] = params["quality"]
-        # Always add mp3 save
-        prompt["88"]["inputs"]["audio"] = ["82", 0]
     else:
         # ACE-Step base
         prompt["14"]["inputs"]["tags"] = params["tags"]
@@ -424,8 +398,6 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
             del prompt["59"], prompt["60"]
             prompt["61"]["inputs"]["filename_prefix"] = params["filename_prefix"]
             prompt["61"]["inputs"]["quality"] = params["quality"]
-        # Always add mp3 save
-        prompt["87"]["inputs"]["audio"] = ["18", 0]
 
     # Queue and fetch as before
     async with aiohttp.ClientSession() as session:
@@ -500,26 +472,7 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
     path = os.path.join('media', filename)
     with open(path, 'wb') as f:
         f.write(audio_content)
-
-    # Fetch mp3
-    mp3_node_id = '87' if not is_simple else '88'
-    mp3_output_audio = history["outputs"][mp3_node_id]["audio"][0]
-    mp3_filename = mp3_output_audio["filename"]
-    mp3_subfolder = mp3_output_audio.get("subfolder", "")
-    mp3_type_ = mp3_output_audio.get("type", "output")
-    mp3_audio_url = f"http://{server_address}/view?filename={mp3_filename}&type={mp3_type_}&subfolder={mp3_subfolder}"
-    async with aiohttp.ClientSession() as session:
-        if DEBUG:
-            print("GET /view mp3:", mp3_audio_url)
-        async with session.get(mp3_audio_url) as resp:
-            if DEBUG:
-                print("GET /view mp3 response status:", resp.status)
-            mp3_audio_content = await resp.read()
-    mp3_path = os.path.join('media', mp3_filename)
-    with open(mp3_path, 'wb') as f:
-        f.write(mp3_audio_content)
-
-    return filename, mp3_filename
+    return filename
 
 app.add_static_files('/media', 'media')
 
@@ -532,11 +485,9 @@ async def main():
             with tabs:
                 ui.tab('Simple')
                 ui.tab('Custom')
-            panels = ui.tab_panels(tabs, value='Simple').classes('w-full')  # Default to Simple
+            panels = ui.tab_panels(tabs, value='Custom').classes('w-full')  # Default to Custom
             with panels:
                 with ui.tab_panel('Simple'):
-                    with ui.row().classes('w-full justify-center'):
-                        simple_audio_player = ui.audio(src='').classes('w-1/2')
                     async def simple_submit():
                         simple_progress.text = 'Generating... 0%'
                         simple_download_button.style('visibility: hidden')
@@ -556,12 +507,10 @@ async def main():
                                 "quality": simple_quality.value
                             }
                             params['progress'] = simple_progress
-                            filename, mp3_filename = await generate_audio(params, is_simple=True)
+                            filename = await generate_audio(params, is_simple=True)
                             app.storage.user['filename'] = filename
                             simple_progress.text = 'Done - Ready to download'
                             simple_download_button.style('visibility: visible')
-                            simple_audio_player.src = f'/media/{mp3_filename}'
-                            simple_audio_player.update()
                         except Exception as e:
                             simple_progress.text = f'Error: {str(e)}'
                     async def simple_download():
@@ -599,7 +548,7 @@ async def main():
                         simple_quality = ui.select(['128k', '192k', '256k', '320k', 'V0'], value='320k', label='Quality').classes('w-48')
                     simple_prompt = ui.textarea(placeholder='Describe your song', value="heaven church electronic dance music").classes('w-full bg-gray-800 text-white')
                     ui.label('Seconds').classes('text-white')
-                    simple_seconds = ui.slider(min=1, max=300, step=0.1, value=60).classes('w-full')
+                    simple_seconds = ui.slider(min=1, max=47, step=0.1, value=47).classes('w-full')
                     simple_seconds_value_label = ui.label(str(simple_seconds.value)).classes('text-white')
                     simple_seconds.on_value_change(lambda e: simple_seconds_value_label.set_text(str(e.value)))
                     # Advanced Options for Simple
@@ -625,8 +574,6 @@ async def main():
                             simple_randomize_seed = ui.checkbox(value=True)
                             ui.label('Randomize Seed').classes('text-white')
                 with ui.tab_panel('Custom'):
-                    with ui.row().classes('w-full justify-center'):
-                        custom_audio_player = ui.audio(src='').classes('w-1/2')
                     async def submit():
                         progress.text = 'Generating... 0%'
                         download_button.style('visibility: hidden')
@@ -659,12 +606,10 @@ async def main():
                                 "format": format_select.value
                             }
                             params['progress'] = progress
-                            filename, mp3_filename = await generate_audio(params, uploaded_path)
+                            filename = await generate_audio(params, uploaded_path)
                             app.storage.user['filename'] = filename
                             progress.text = 'Done - Ready to download'
                             download_button.style('visibility: visible')
-                            custom_audio_player.src = f'/media/{mp3_filename}'
-                            custom_audio_player.update()
                         except Exception as e:
                             progress.text = f'Error: {str(e)}'
                         finally:
@@ -729,7 +674,7 @@ async def main():
                         with ui.row():
                             song_mode = ui.radio(['By Line', 'Full Song'], value='Full Song').classes('text-white')
                     ui.label('Seconds').classes('text-white')
-                    seconds = ui.slider(min=10, max=300, step=1, value=60).classes('w-full')
+                    seconds = ui.slider(min=10, max=180, step=1, value=120).classes('w-full')
                     seconds_value_label = ui.label(str(seconds.value)).classes('text-white')
                     seconds.on_value_change(lambda e: seconds_value_label.set_text(str(e.value)))
                     ui.label('♪ Styles').classes('text-white')
