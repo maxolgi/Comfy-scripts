@@ -71,7 +71,7 @@ def process_directory(directory, parallel, keep_temp, overwrite):
     json_files = [f for f in os.listdir(directory) if f.endswith('.json')]
     for json_file in json_files:
         path = os.path.join(directory, json_file)
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             workflow = json.load(f)
         # Extract from main nodes
         extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
@@ -195,7 +195,7 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite, watch, daemon
         process_directory(directory, parallel, keep_temp, overwrite)
     
     if workflow_path:
-        with open(workflow_path, 'r') as f:
+        with open(workflow_path, 'r', encoding='utf-8') as f:
             workflow = json.load(f)
         # Extract from main nodes
         extract_models_from_nodes(workflow.get('nodes', []), models_set, urls_list, warnings)
