@@ -184,7 +184,7 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite, watch, daemon
             print("Directory does not exist yet. Waiting for it to be created...")
             try:
                 while not os.path.exists(directory):
-                    time.sleep(1)
+                    time.sleep(2)
             except KeyboardInterrupt:
                 print("Waiting interrupted.")
                 sys.exit(0)
