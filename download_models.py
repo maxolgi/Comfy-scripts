@@ -136,12 +136,43 @@ def process_directory(directory, parallel, keep_temp, overwrite):
             os.rmdir(MODELS_TEMP_DIR)
             print(f"Removed empty {MODELS_TEMP_DIR} directory")
 
-def main(workflow_path, directory, parallel, keep_temp, overwrite, watch):
+def daemonize():
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as e:
+        print(f"Fork #1 failed: {e}")
+        sys.exit(1)
+
+    os.chdir('/')
+    os.setsid()
+    os.umask(0)
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as e:
+        print(f"Fork #2 failed: {e}")
+        sys.exit(1)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    with open(os.devnull, 'r') as si, open(os.devnull, 'a+') as so, open(os.devnull, 'a+') as se:
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+
+def main(workflow_path, directory, parallel, keep_temp, overwrite, watch, daemon):
     if not workflow_path and not directory:
         parser.print_help()
         sys.exit(0)
     if watch and not directory:
         print("Error: --watch requires --directory")
+        sys.exit(1)
+    if daemon and not (watch and directory):
+        print("Error: --daemon requires --watch and --directory")
         sys.exit(1)
     
     models_set = set()
@@ -149,6 +180,15 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite, watch):
     warnings = []
     
     if directory:
+        if watch and not os.path.exists(directory):
+            print("Directory does not exist yet. Waiting for it to be created...")
+            try:
+                while not os.path.exists(directory):
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("Waiting interrupted.")
+                sys.exit(0)
+            print("Directory created. Starting initial processing and watching.")
         process_directory(directory, parallel, keep_temp, overwrite)
     
     if workflow_path:
@@ -218,6 +258,8 @@ def main(workflow_path, directory, parallel, keep_temp, overwrite, watch):
                 print(f"Removed empty {MODELS_TEMP_DIR} directory")
     
     if watch:
+        if daemon:
+            daemonize()
         class WorkflowHandler(FileSystemEventHandler):
             def __init__(self, directory, parallel, keep_temp, overwrite):
                 self.directory = directory
@@ -256,5 +298,6 @@ if __name__ == '__main__':
     parser.add_argument('--keep_temp', action='store_true', help="Keep the /models_temp directory and files (default: False)")
     parser.add_argument('--overwrite', action='store_true', help="Force overwrite if model exists in target (default: False)")
     parser.add_argument('--watch', action='store_true', help="Watch the directory for changes and rerun on file add/change (requires --directory)")
+    parser.add_argument('--daemon', action='store_true', help="Daemonize the process to run in background (requires --watch and --directory)")
     args = parser.parse_args()
-    main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite, args.watch)
+    main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite, args.watch, args.daemon)
