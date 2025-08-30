@@ -13,7 +13,7 @@ api = HfApi()
 files = api.list_repo_files(args.repo_id)
 
 safetensors_files = [f for f in files if f.endswith('.safetensors')]
-gguf_files = [f for f in files if f.endswith('.gguf')]
+gguf_files = [f for f in gguf_files if f.endswith('.gguf')]
 
 if args.q:
     if '_' in args.q:
@@ -22,7 +22,8 @@ if args.q:
         gguf_files = [f for f in gguf_files if f'-{args.q}_' in f]
 
 gguf_dir = os.path.join(args.local_dir, "unet")
-to_download = [(f, args.local_dir) for f in safetensors_files] + [(f, gguf_dir) for f in gguf_files]
+vae_dir = os.path.join(args.local_dir, "vae")
+to_download = [(f, vae_dir) for f in safetensors_files] + [(f, gguf_dir) for f in gguf_files]
 
 for f, dir_path in to_download:
     base_name = os.path.basename(f)
