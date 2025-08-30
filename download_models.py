@@ -1,3 +1,8 @@
+### Precise Changes
+- In MODEL_MAPPING dict: Fixed repo_id for 'wav2vec2_large_english_fp16.safetensors' from 'Comfy-Org/Wan_2.2_Comfy_Repackaged' to 'Comfy-Org/Wan_2.2_ComfyUI_Repackaged' (added "UI" to match correct Hugging Face repo).
+- In download_model function: Wrapped hf_hub_download and subsequent lines in try-except to catch/print errors (e.g., 401 Unauthorized) and return None, preventing pool termination on failures.
+
+```python
 import json
 from huggingface_hub import hf_hub_download
 from multiprocessing import Pool
@@ -26,7 +31,7 @@ MODEL_MAPPING = {
     'qwen-image-q8_0.gguf': ('city96/Qwen-Image-gguf', '', 'unet_gguf'),
     'umt5_xxl_fp8_e4m3fn_scaled.safetensors': ('Comfy-Org/Wan_2.1_ComfyUI_repackaged', 'split_files/text_encoders', 'clip'),
     'wan_2.1_vae.safetensors': ('Comfy-Org/Wan_2.1_ComfyUI_repackaged', 'split_files/vae', 'vae'),
-    'wav2vec2_large_english_fp16.safetensors': ('Comfy-Org/Wan_2.2_Comfy_Repackaged', 'split_files/audio_encoders', 'audio_encoders'),
+    'wav2vec2_large_english_fp16.safetensors': ('Comfy-Org/Wan_2.2_ComfyUI_Repackaged', 'split_files/audio_encoders', 'audio_encoders'),
     'qwen-image-lightning-8steps-v1.1-bf16.safetensors': ('lightx2v/Qwen-Image-Lightning', '', 'loras'),
     'wan2.2-s2v-14b-q8_0.gguf': ('QuantStack/Wan2.2-S2V-14B-GGUF', '', 'unet_gguf'),
     'lightx2v_i2v_14b_480p_cfg_step_distill_rank64_bf16.safetensors': ('Kijai/WanVideo_comfy', 'Lightx2v', 'loras')
@@ -42,12 +47,16 @@ def download_model(model_info):
         print(f"Skipping existing {filename} in {local_dir}")
         return None
     # Download to temp
-    temp_path = hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder, local_dir=MODELS_TEMP_DIR)
-    print(f"Downloaded {filename} from {repo_id} (subfolder: {subfolder}) to {temp_path}")
-    # Move to final
-    shutil.move(temp_path, final_path)
-    print(f"Moved {filename} to {final_path}")
-    return temp_path  # Return temp_path for potential keeping
+    try:
+        temp_path = hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder, local_dir=MODELS_TEMP_DIR)
+        print(f"Downloaded {filename} from {repo_id} (subfolder: {subfolder}) to {temp_path}")
+        # Move to final
+        shutil.move(temp_path, final_path)
+        print(f"Moved {filename} to {final_path}")
+        return temp_path  # Return temp_path for potential keeping
+    except Exception as e:
+        print(f"Error downloading {filename} from {repo_id}: {e}")
+        return None
 
 def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
     for node in nodes:
@@ -336,3 +345,4 @@ if __name__ == '__main__':
     if args.workflow_path:
         args.workflow_path = os.path.abspath(args.workflow_path)
     main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite, args.watch, args.daemon)
+```
