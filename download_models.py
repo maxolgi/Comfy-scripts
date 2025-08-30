@@ -1,8 +1,3 @@
-### Precise Changes
-- In MODEL_MAPPING dict: Fixed repo_id for 'wav2vec2_large_english_fp16.safetensors' from 'Comfy-Org/Wan_2.2_Comfy_Repackaged' to 'Comfy-Org/Wan_2.2_ComfyUI_Repackaged' (added "UI" to match correct Hugging Face repo).
-- In download_model function: Wrapped hf_hub_download and subsequent lines in try-except to catch/print errors (e.g., 401 Unauthorized) and return None, preventing pool termination on failures.
-
-```python
 import json
 from huggingface_hub import hf_hub_download
 from multiprocessing import Pool
@@ -27,16 +22,6 @@ COMFYUI_MODELS_DIR = os.path.join(WORKSPACE_DIR, 'ComfyUI', 'models')
 os.environ['HF_HOME'] = HF_HOME_DIR
 os.environ['HF_HUB_CACHE'] = HF_HUB_CACHE_DIR
 
-MODEL_MAPPING = {
-    'qwen-image-q8_0.gguf': ('city96/Qwen-Image-gguf', '', 'unet_gguf'),
-    'umt5_xxl_fp8_e4m3fn_scaled.safetensors': ('Comfy-Org/Wan_2.1_ComfyUI_repackaged', 'split_files/text_encoders', 'clip'),
-    'wan_2.1_vae.safetensors': ('Comfy-Org/Wan_2.1_ComfyUI_repackaged', 'split_files/vae', 'vae'),
-    'wav2vec2_large_english_fp16.safetensors': ('Comfy-Org/Wan_2.2_ComfyUI_Repackaged', 'split_files/audio_encoders', 'audio_encoders'),
-    'qwen-image-lightning-8steps-v1.1-bf16.safetensors': ('lightx2v/Qwen-Image-Lightning', '', 'loras'),
-    'wan2.2-s2v-14b-q8_0.gguf': ('QuantStack/Wan2.2-S2V-14B-GGUF', '', 'unet_gguf'),
-    'lightx2v_i2v_14b_480p_cfg_step_distill_rank64_bf16.safetensors': ('Kijai/WanVideo_comfy', 'Lightx2v', 'loras')
-}
-
 def download_model(model_info):
     repo_id, filename, subfolder, local_subdir, url, overwrite = model_info
     os.makedirs(MODELS_TEMP_DIR, exist_ok=True)
@@ -47,16 +32,12 @@ def download_model(model_info):
         print(f"Skipping existing {filename} in {local_dir}")
         return None
     # Download to temp
-    try:
-        temp_path = hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder, local_dir=MODELS_TEMP_DIR)
-        print(f"Downloaded {filename} from {repo_id} (subfolder: {subfolder}) to {temp_path}")
-        # Move to final
-        shutil.move(temp_path, final_path)
-        print(f"Moved {filename} to {final_path}")
-        return temp_path  # Return temp_path for potential keeping
-    except Exception as e:
-        print(f"Error downloading {filename} from {repo_id}: {e}")
-        return None
+    temp_path = hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder, local_dir=MODELS_TEMP_DIR)
+    print(f"Downloaded {filename} from {repo_id} (subfolder: {subfolder}) to {temp_path}")
+    # Move to final
+    shutil.move(temp_path, final_path)
+    print(f"Moved {filename} to {final_path}")
+    return temp_path  # Return temp_path for potential keeping
 
 def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
     for node in nodes:
@@ -82,26 +63,6 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                 model_tuple = (repo_base, filename, subfolder, local_subdir, url)
                 models_set.add(model_tuple)
                 urls_list.append(url)
-
-        # Auto-parse from specific node types
-        node_type = node.get('type')
-        if node_type in ['UnetLoaderGGUFDisTorchMultiGPU', 'CLIPLoader', 'VAELoader', 'AudioEncoderLoader', 'LoraLoaderModelOnly']:
-            filename_path = node.get('widgets_values', [None])[0]
-            if filename_path:
-                # Handle paths with \ or /
-                split_path = filename_path.replace('\\', '/').split('/')
-                filename = split_path[-1]
-                path_prefix = '/'.join(split_path[:-1]) + '/' if len(split_path) > 1 else ''
-                key = filename.lower()
-                if key in MODEL_MAPPING:
-                    repo_id, subfolder, base_subdir = MODEL_MAPPING[key]
-                    local_subdir = base_subdir + '/' + path_prefix.rstrip('/') if path_prefix else base_subdir
-                    url = f"https://huggingface.co/{repo_id}/resolve/main/{subfolder}/{filename}" if subfolder else f"https://huggingface.co/{repo_id}/resolve/main/{filename}"
-                    model_tuple = (repo_id, filename, subfolder, local_subdir, url)
-                    models_set.add(model_tuple)
-                    urls_list.append(url)
-                else:
-                    warnings.append(f"Unmapped filename {filename} in node {node.get('id')} type {node_type}")
 
 def process_directory(directory, parallel, keep_temp, overwrite):
     models_set = set()
@@ -345,4 +306,3 @@ if __name__ == '__main__':
     if args.workflow_path:
         args.workflow_path = os.path.abspath(args.workflow_path)
     main(args.workflow_path, args.directory, args.parallel, args.keep_temp, args.overwrite, args.watch, args.daemon)
-```
