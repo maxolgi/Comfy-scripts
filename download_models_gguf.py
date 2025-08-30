@@ -23,7 +23,7 @@ if args.q:
 
 gguf_dir = os.path.join(args.local_dir, "unet")
 vae_dir = os.path.join(args.local_dir, "vae")
-text_encoder_dir = os.path.join(args.local_dir, "text_encoder")
+text_encoder_dir = os.path.join(args.local_dir, "text_encoders")
 
 to_download = []
 for f in safetensors_files:
