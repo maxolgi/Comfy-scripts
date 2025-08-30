@@ -22,6 +22,16 @@ COMFYUI_MODELS_DIR = os.path.join(WORKSPACE_DIR, 'ComfyUI', 'models')
 os.environ['HF_HOME'] = HF_HOME_DIR
 os.environ['HF_HUB_CACHE'] = HF_HUB_CACHE_DIR
 
+MODEL_MAPPING = {
+    'qwen-image-q8_0.gguf': ('city96/Qwen-Image-gguf', '', 'unet_gguf'),
+    'umt5_xxl_fp8_e4m3fn_scaled.safetensors': ('Comfy-Org/Wan_2.1_ComfyUI_repackaged', 'split_files/text_encoders', 'clip'),
+    'wan_2.1_vae.safetensors': ('Comfy-Org/Wan_2.1_ComfyUI_repackaged', 'split_files/vae', 'vae'),
+    'wav2vec2_large_english_fp16.safetensors': ('Comfy-Org/Wan_2.2_Comfy_Repackaged', 'split_files/audio_encoders', 'audio_encoders'),
+    'qwen-image-lightning-8steps-v1.1-bf16.safetensors': ('lightx2v/Qwen-Image-Lightning', '', 'loras'),
+    'wan2.2-s2v-14b-q8_0.gguf': ('QuantStack/Wan2.2-S2V-14B-GGUF', '', 'unet_gguf'),
+    'lightx2v_i2v_14b_480p_cfg_step_distill_rank64_bf16.safetensors': ('Kijai/WanVideo_comfy', 'Lightx2v', 'loras')
+}
+
 def download_model(model_info):
     repo_id, filename, subfolder, local_subdir, url, overwrite = model_info
     os.makedirs(MODELS_TEMP_DIR, exist_ok=True)
@@ -63,6 +73,26 @@ def extract_models_from_nodes(nodes, models_set, urls_list, warnings):
                 model_tuple = (repo_base, filename, subfolder, local_subdir, url)
                 models_set.add(model_tuple)
                 urls_list.append(url)
+
+        # Auto-parse from specific node types
+        node_type = node.get('type')
+        if node_type in ['UnetLoaderGGUFDisTorchMultiGPU', 'CLIPLoader', 'VAELoader', 'AudioEncoderLoader', 'LoraLoaderModelOnly']:
+            filename_path = node.get('widgets_values', [None])[0]
+            if filename_path:
+                # Handle paths with \ or /
+                split_path = filename_path.replace('\\', '/').split('/')
+                filename = split_path[-1]
+                path_prefix = '/'.join(split_path[:-1]) + '/' if len(split_path) > 1 else ''
+                key = filename.lower()
+                if key in MODEL_MAPPING:
+                    repo_id, subfolder, base_subdir = MODEL_MAPPING[key]
+                    local_subdir = base_subdir + '/' + path_prefix.rstrip('/') if path_prefix else base_subdir
+                    url = f"https://huggingface.co/{repo_id}/resolve/main/{subfolder}/{filename}" if subfolder else f"https://huggingface.co/{repo_id}/resolve/main/{filename}"
+                    model_tuple = (repo_id, filename, subfolder, local_subdir, url)
+                    models_set.add(model_tuple)
+                    urls_list.append(url)
+                else:
+                    warnings.append(f"Unmapped filename {filename} in node {node.get('id')} type {node_type}")
 
 def process_directory(directory, parallel, keep_temp, overwrite):
     models_set = set()
