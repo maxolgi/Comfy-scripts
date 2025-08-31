@@ -41,166 +41,7 @@ def daemonize():
     os.dup2(so.fileno(), sys.stdout.fileno())
     os.dup2(se.fileno(), sys.stderr.fileno())
 
-# Full workflow API from t2s_api.json with additions
-workflow_api = {
-  "14": {
-    "inputs": {
-      "tags": "anime, cute female vocals, kawaii pop, j-pop, childish, piano, guitar, synthesizer, fast, happy, cheerful, lighthearted",
-      "lyrics": "[verse]\nフワフワ　オミミガ\nユレルヨ　カゼノナカ\nキラキラ　アオイメ\nミツメル　セカイヲ\n\n[verse]\nフワフワ　シッポハ\nオオキク　ユレルヨ\nキンイロ　カミノケ\nナビクヨ　カゼノナカ\n\n[verse]\nコンフィーユーアイノ\nマモリビト\nピンクノ　セーターデ\nエガオヲ　クレルヨ\n\nアオイロ　スカートト\nクロイコート　キンノモヨウ\nヤサシイ　ヒカリガ\nツツムヨ　フェネックガール\n\n[verse]\nフワフワ　オミミデ\nキコエル　ココロノ　コエ\nダイスキ　フェネックガール\nイツデモ　ソバニイルヨ",
-      "lyrics_strength": 0.9900000000000002,
-      "clip": [
-        "40",
-        1
-      ]
-    },
-    "class_type": "TextEncodeAceStepAudio"
-  },
-  "17": {
-    "inputs": {
-      "seconds": 60,
-      "batch_size": 1
-    },
-    "class_type": "EmptyAceStepLatentAudio"
-  },
-  "18": {
-    "inputs": {
-      "samples": [
-        "52",
-        0
-      ],
-      "vae": [
-        "40",
-        2
-      ]
-    },
-    "class_type": "VAEDecodeAudio"
-  },
-  "40": {
-    "inputs": {
-      "ckpt_name": "ace_step_v1_3.5b.safetensors"
-    },
-    "class_type": "CheckpointLoaderSimple"
-  },
-  "44": {
-    "inputs": {
-      "conditioning": [
-        "14",
-        0
-      ]
-    },
-    "class_type": "ConditioningZeroOut"
-  },
-  "49": {
-    "inputs": {
-      "model": [
-        "51",
-        0
-      ],
-      "operation": [
-        "50",
-        0
-      ]
-    },
-    "class_type": "LatentApplyOperationCFG"
-  },
-  "50": {
-    "inputs": {
-      "multiplier": 1.0000000000000002
-    },
-    "class_type": "LatentOperationTonemapReinhard"
-  },
-  "51": {
-    "inputs": {
-      "shift": 5.000000000000001,
-      "model": [
-        "40",
-        0
-      ]
-    },
-    "class_type": "ModelSamplingSD3"
-  },
-  "52": {
-    "inputs": {
-      "seed": 247844496912620,
-      "steps": 50,
-      "cfg": 5,
-      "sampler_name": "euler",
-      "scheduler": "simple",
-      "denoise": 0.30000000000000004,
-      "model": [
-        "49",
-        0
-      ],
-      "positive": [
-        "14",
-        0
-      ],
-      "negative": [
-        "44",
-        0
-      ],
-      "latent_image": [
-        "17",
-        0
-      ]
-    },
-    "class_type": "KSampler"
-  },
-  "59": {
-    "inputs": {
-      "filename_prefix": "audio/ComfyUI",
-      "quality": "V0",
-      "audioUI": "",
-      "audio": [
-        "18",
-        0
-      ]
-    },
-    "class_type": "SaveAudioMP3"
-  },
-  "60": {
-    "inputs": {
-      "filename_prefix": "audio/ComfyUI",
-      "audioUI": "",
-      "audio": [
-        "18",
-        0
-      ]
-    },
-    "class_type": "SaveAudio"
-  },
-  "61": {
-    "inputs": {
-      "filename_prefix": "audio/ComfyUI",
-      "quality": "128k",
-      "audioUI": "",
-      "audio": [
-        "18",
-        0
-      ]
-    },
-    "class_type": "SaveAudioOpus"
-  },
-  "64": {
-    "inputs": {
-      "audio": "Honey.wav",
-      "audioUI": ""
-    },
-    "class_type": "LoadAudio"
-  },
-  "68": {
-    "inputs": {
-      "audio": [
-        "64",
-        0
-      ],
-      "vae": [
-        "40",
-        2
-      ]
-    },
-    "class_type": "VAEEncodeAudio"
-  },
+stable_workflow_api = {
   "76": {
     "inputs": {
       "seed": 840755638734093,
@@ -293,9 +134,9 @@ workflow_api = {
     },
     "class_type": "SaveAudio"
   },
-  "84": {  # New negative conditioning for exclude
+  "84": {  
     "inputs": {
-      "conditioning": ["78", 0]  # Link to positive for base, but override with negative tags
+      "conditioning": ["78", 0]  
     },
     "class_type": "ConditioningZeroOut"
   },
@@ -323,18 +164,6 @@ workflow_api = {
     },
     "class_type": "SaveAudioOpus"
   },
-  "87": {
-    "inputs": {
-      "filename_prefix": "audio/ComfyUI_mp3",
-      "quality": "V0",
-      "audioUI": "",
-      "audio": [
-        "18",
-        0
-      ]
-    },
-    "class_type": "SaveAudioMP3"
-  },
   "88": {
     "inputs": {
       "filename_prefix": "audio/ComfyUI_mp3",
@@ -349,18 +178,192 @@ workflow_api = {
   }
 }
 
+ace_workflow_api = {
+  "14": {
+    "inputs": {
+      "tags": "anime, soft female vocals, kawaii pop, j-pop, childish, piano, guitar, synthesizer, fast, happy, cheerful, lighthearted\t\n",
+      "lyrics": "[inst]\n\n[verse]\nふわふわ　おみみが\nゆれるよ　かぜのなか\nきらきら　あおいめ\nみつめる　せかいを\n\n[verse]\nふわふわ　しっぽは\nおおきく　ゆれるよ\nきんいろ　かみのけ\nなびくよ　かぜのなか\n\n[verse]\nコンフィーユーアイの\nまもりびと\nピンクの　セーターで\nえがおを　くれるよ\n\nあおいろ　スカートと\nくろいコート　きんのもよう\nやさしい　ひかりが\nつつむよ　フェネックガール\n\n[verse]\nふわふわ　おみみで\nきこえる　こころの　こえ\nだいすき　フェネックガール\nいつでも　そばにいるよ\n\n\n",
+      "lyrics_strength": 0.9900000000000002,
+      "clip": [
+        "40",
+        1
+      ]
+    },
+    "class_type": "TextEncodeAceStepAudio"
+  },
+  "17": {
+    "inputs": {
+      "seconds": 120,
+      "batch_size": 1
+    },
+    "class_type": "EmptyAceStepLatentAudio"
+  },
+  "18": {
+    "inputs": {
+      "samples": [
+        "52",
+        0
+      ],
+      "vae": [
+        "40",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio"
+  },
+  "40": {
+    "inputs": {
+      "ckpt_name": "ace_step_v1_3.5b.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "44": {
+    "inputs": {
+      "conditioning": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut"
+  },
+  "49": {
+    "inputs": {
+      "model": [
+        "51",
+        0
+      ],
+      "operation": [
+        "50",
+        0
+      ]
+    },
+    "class_type": "LatentApplyOperationCFG"
+  },
+  "50": {
+    "inputs": {
+      "multiplier": 1.0000000000000002
+    },
+    "class_type": "LatentOperationTonemapReinhard"
+  },
+  "51": {
+    "inputs": {
+      "shift": 5.000000000000001,
+      "model": [
+        "40",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3"
+  },
+  "52": {
+    "inputs": {
+      "seed": 468254064217846,
+      "steps": 50,
+      "cfg": 5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "49",
+        0
+      ],
+      "positive": [
+        "14",
+        0
+      ],
+      "negative": [
+        "44",
+        0
+      ],
+      "latent_image": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "KSampler"
+  },
+  "59": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "quality": "V0",
+      "audioUI": "",
+      "audio": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "SaveAudioMP3"
+  },
+  "60": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "audioUI": "",
+      "audio": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "SaveAudio"
+  },
+  "61": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "quality": "128k",
+      "audioUI": "",
+      "audio": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "SaveAudioOpus"
+  },
+  "64": {
+    "inputs": {
+      "audio": "ace_step_example.flac",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio"
+  },
+  "68": {
+    "inputs": {
+      "audio": [
+        "64",
+        0
+      ],
+      "vae": [
+        "40",
+        2
+      ]
+    },
+    "class_type": "VAEEncodeAudio"
+  },
+  "87": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI_mp3",
+      "quality": "V0",
+      "audioUI": "",
+      "audio": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "SaveAudioMP3"
+  }
+}
+
 server_address = '127.0.0.1:8888'
 
 async def generate_audio(params, uploaded_audio=None, is_simple=False):
     client_id = str(uuid.uuid4())
-    prompt = workflow_api.copy()
+    if is_simple:
+        prompt = stable_workflow_api.copy()
+    else:
+        prompt = ace_workflow_api.copy()
     
     # Conditional branches
     if is_simple:
         # Stable Audio branch for Simple mode
         prompt["78"]["inputs"]["text"] = params["prompt"]
-        # Remove ACE-specific nodes
-        del prompt["14"], prompt["44"], prompt["17"], prompt["51"], prompt["50"], prompt["49"], prompt["18"], prompt["59"], prompt["60"], prompt["61"], prompt["64"], prompt["68"], prompt["87"]
         prompt["76"]["inputs"]["positive"] = ["78", 0]
         prompt["76"]["inputs"]["negative"] = ["79", 0]
         prompt["76"]["inputs"]["latent_image"] = ["81", 0]
@@ -406,11 +409,22 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
             prompt["64"]["inputs"]["audio"] = uploaded_audio
             prompt["52"]["inputs"]["latent_image"] = ["68", 0]
             prompt["52"]["inputs"]["denoise"] = 0.3  # Default for repaint
+        else:
+            del prompt["64"], prompt["68"]
         
         # Negative for exclude
         if params["exclude_styles"]:
-            prompt["79"]["inputs"]["text"] = params["exclude_styles"]
-            prompt["52"]["inputs"]["negative"] = ["84", 0]  # Use new negative
+            del prompt["44"]
+            prompt["90"] = {
+                "inputs": {
+                    "tags": params["exclude_styles"],
+                    "lyrics": "",
+                    "lyrics_strength": 0.99,
+                    "clip": ["40", 1]
+                },
+                "class_type": "TextEncodeAceStepAudio"
+            }
+            prompt["52"]["inputs"]["negative"] = ["90", 0]
 
         # Delete unused save nodes
         if params["format"] == "mp3":
@@ -459,7 +473,7 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
     
     async with aiohttp.ClientSession() as session:
         history = None
-        for attempt in range(30):
+        for attempt in range(60):
             if DEBUG:
                 print("GET /history/", prompt_id, f"attempt {attempt+1}")
             async with session.get(f"http://{server_address}/history/{prompt_id}") as response:
@@ -475,9 +489,9 @@ async def generate_audio(params, uploaded_audio=None, is_simple=False):
                 except Exception as e:
                     if DEBUG:
                         print("History fetch error:", str(e))
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
         if history is None:
-            raise ValueError(f"History for prompt_id {prompt_id} not found after 30 attempts")
+            raise ValueError(f"History for prompt_id {prompt_id} not found after 60 attempts")
 
     node_id = {
         'mp3': '59' if not is_simple else '85',
@@ -721,7 +735,7 @@ async def main():
                                 format_select = ui.select(['mp3', 'flac', 'opus'], value='mp3', label='Format').classes('w-48')
                                 quality = ui.select(['128k', '192k', '256k', '320k', 'V0'], value='320k', label='Quality').classes('w-48')
                     ui.label('♪ Lyrics').classes('text-white')
-                    lyrics = ui.textarea(placeholder='Add your own lyrics here', value=workflow_api["14"]["inputs"]["lyrics"]).classes('w-full bg-gray-800 text-white')
+                    lyrics = ui.textarea(placeholder='Add your own lyrics here', value=ace_workflow_api["14"]["inputs"]["lyrics"]).classes('w-full bg-gray-800 text-white')
                     with ui.row():
                         ui.button('Auto').classes('bg-gray-800 text-white')  # Non-functional
                         ui.button('Write Lyrics').classes('bg-gray-800 text-white')  # Non-functional
@@ -733,7 +747,7 @@ async def main():
                     seconds_value_label = ui.label(str(seconds.value)).classes('text-white')
                     seconds.on_value_change(lambda e: seconds_value_label.set_text(str(e.value)))
                     ui.label('♪ Styles').classes('text-white')
-                    tags = ui.textarea(placeholder='Enter style tags', value=workflow_api["14"]["inputs"]["tags"]).classes('w-full bg-gray-800 text-white')
+                    tags = ui.textarea(placeholder='Enter style tags', value=ace_workflow_api["14"]["inputs"]["tags"]).classes('w-full bg-gray-800 text-white')
                     with ui.row().classes('flex-wrap'):
                         ui.button('break up', on_click=lambda: tags.set_value(tags.value + ' break up')).classes('bg-gray-700 text-white rounded-full m-1')
                         ui.button('country', on_click=lambda: tags.set_value(tags.value + ' country')).classes('bg-gray-700 text-white rounded-full m-1')
