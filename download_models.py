@@ -12,7 +12,7 @@ from watchdog.events import FileSystemEventHandler
 # Note: For --watch option, install watchdog via pip install watchdog
 
 # Define all paths at the top
-WORKSPACE_DIR = '/'
+WORKSPACE_DIR = '/workspace'
 HF_HOME_DIR = os.path.join(WORKSPACE_DIR, 'hf_home')
 HF_HUB_CACHE_DIR = os.path.join(HF_HOME_DIR, 'hub')
 MODELS_TEMP_DIR = os.path.join(WORKSPACE_DIR, 'models_temp')
