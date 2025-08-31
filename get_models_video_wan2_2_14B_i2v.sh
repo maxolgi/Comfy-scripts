@@ -6,3 +6,5 @@ python /ComfyUI/Comfy-scripts/download_models.py /ComfyUI/Comfy-scripts/video_wa
 git clone https://github.com/city96/ComfyUI-GGUF /ComfyUI/custom_nodes/ComfyUI-GGUF
 git checkout d247022e3fa66851c5084cc251b076aab816423d
 pip install --upgrade gguf
+
+cd /ComfyUI/custom_nodes/ComfyUI-Manager && python cm-cli.py update all
