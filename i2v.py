@@ -299,18 +299,15 @@ workflow = {
   },
   "23": {
     "inputs": {
-      "path": "frames",
-      "filename": "Gradio",
-      "overwrite": "true",
-      "png_compress_level": 0,
+      "filename_prefix": "frames/Gradio",
       "images": [
         "14:1365",
         0
       ]
     },
-    "class_type": "SaveImagetoPath",
+    "class_type": "SaveImage",
     "_meta": {
-      "title": "Save Image to Path"
+      "title": "Save Image"
     }
   }
 }
@@ -390,7 +387,8 @@ def generate_video(prompt, image, debug=False):
         ts = int(time.time())
         prefix = f"video/Gradio_{ts}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
-        workflow["23"]["inputs"]["filename"] = f"Gradio_{ts}_"
+        frame_prefix = f"frames/Gradio_{ts}"
+        workflow["23"]["inputs"]["filename_prefix"] = frame_prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
         
         # Queue prompt
