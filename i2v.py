@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "From any static input image, generate a dynamic video that adds intense, Incorporate dynamic camera movements throughout the video, focusing exclusively on energetic zooms that dive in close to highlight vibrant details of all prominent objects and pull back swiftly to reveal the full scene, creating a thrilling, immersive perspective.",
+      "text": "Beautiful young European woman with honey blonde hair gracefully turning her head back over shoulder, gentle smile, bright eyes looking at camera. Hair flowing in slow motion as she turns. Soft natural lighting, clean background, cinematic slow-motion portrait.",
       "clip": [
         "8",
         0
@@ -189,12 +189,12 @@ workflow = {
     "inputs": {
       "add_noise": "enable",
       "noise_seed": 1093964355475357,
-      "steps": 4,
+      "steps": 2,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
       "start_at_step": 0,
-      "end_at_step": 2,
+      "end_at_step": 1,
       "return_with_leftover_noise": "enable",
       "model": [
         "14:1370",
@@ -222,12 +222,12 @@ workflow = {
     "inputs": {
       "add_noise": "disable",
       "noise_seed": 0,
-      "steps": 4,
+      "steps": 2,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
-      "start_at_step": 2,
-      "end_at_step": 4,
+      "start_at_step": 1,
+      "end_at_step": 2,
       "return_with_leftover_noise": "disable",
       "model": [
         "14:1368",
@@ -296,6 +296,19 @@ workflow = {
     "_meta": {
       "title": "Unet Loader (GGUF)"
     }
+  },
+  "23": {
+    "inputs": {
+      "filename_prefix": "frames/Gradio",
+      "images": [
+        "14:1365",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
   }
 }
 
@@ -337,9 +350,38 @@ def update_history():
     video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
+def get_frame_image(filename):
+    url = f"{comfyui_public_url}/view?filename={filename}&subfolder=frames&type=output"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return Image.open(BytesIO(response.content))
+    return None
+
+def update_preview(selected, frame_filenames):
+    if not frame_filenames:
+        return None
+    idx = selected - 1
+    if idx < 0 or idx >= len(frame_filenames):
+        return None
+    fn = frame_filenames[idx]
+    return get_frame_image(fn)
+
+def continue_generation(prompt, selected, frame_filenames, debug):
+    if not frame_filenames:
+        return "", update_history(), [], None
+    idx = selected - 1
+    if idx < 0 or idx >= len(frame_filenames):
+        return "", update_history(), [], None
+    fn = frame_filenames[idx]
+    response = requests.get(f"{comfyui_public_url}/view?filename={fn}&subfolder=frames&type=output")
+    if response.status_code != 200:
+        return "", update_history(), [], None
+    image = Image.open(BytesIO(response.content))
+    return generate_video(prompt, image, debug)
+
 def generate_video(prompt, image, debug=False):
     if image is None:
-        return "", None
+        return "", update_history(), [], None
     
     try:
         # Upload image
@@ -357,13 +399,12 @@ def generate_video(prompt, image, debug=False):
         
         # Update workflow
         workflow["22"]["inputs"]["image"] = uploaded_filename
-        fixed_positive = workflow["20"]["inputs"]["text"]
-        effective_positive = (prompt + " " + fixed_positive) if prompt else fixed_positive
-        workflow["20"]["inputs"]["text"] = effective_positive
-        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
-        workflow["9"]["inputs"]["text"] = fixed_negative
-        prefix = f"video/Gradio_{int(time.time())}"
+        workflow["20"]["inputs"]["text"] = prompt if prompt else ""
+        ts = int(time.time())
+        prefix = f"video/Gradio_{ts}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
+        frame_prefix = f"frames/Gradio_{ts}"
+        workflow["23"]["inputs"]["filename_prefix"] = frame_prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
         
         # Queue prompt
@@ -392,7 +433,7 @@ def generate_video(prompt, image, debug=False):
             time.sleep(2)
         
         if prompt_id not in history:
-            return "", None
+            return "", update_history(), [], None
         
         # Parse exact video info
         node_output = history[prompt_id]["outputs"]["15"]
@@ -403,29 +444,45 @@ def generate_video(prompt, image, debug=False):
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
         new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
         
-        video_urls = get_all_videos(max_history_videos)
-        history_html = render_video_list(video_urls)
+        # Parse frame filenames
+        if "23" in history[prompt_id]["outputs"]:
+            frame_infos = history[prompt_id]["outputs"]["23"]["images"]
+            frame_filenames = [info["filename"] for info in frame_infos]
+        else:
+            frame_filenames = []
         
-        return new_video_html, history_html
+        # Get preview of last frame
+        preview_img = update_preview(101, frame_filenames) if frame_filenames else None
+        
+        history_html = render_video_list(get_all_videos(max_history_videos))
+        
+        return new_video_html, history_html, frame_filenames, preview_img
     except Exception as e:
         if debug:
             import traceback
             print(f"Debug: Exception details: {traceback.format_exc()}")
-        return "", None
+        return "", update_history(), [], None
 
 with gr.Blocks(css="footer {display: none !important;}", js="""() => { const params = new URLSearchParams(window.location.search); if (!params.has('__theme')) { params.set('__theme', 'dark'); window.location.search = params.toString(); } const observer = new MutationObserver(() => { const modals = document.querySelectorAll('.gr-modal'); modals.forEach(modal => { if (modal.textContent.includes('connection might break')) { modal.style.display = 'none'; } }); }); observer.observe(document.body, { childList: true, subtree: true }); }""") as demo:
     image_state = gr.State(None)
     debug_state = gr.State(debug)
+    frame_filenames_state = gr.State([])
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    gen_btn = gr.Button("videoze")
+    gen_btn = gr.Button("Vidioze")
     gr.Markdown("")
-    history_html = gr.HTML()
     output = gr.HTML(label="")
+    with gr.Row():
+        frame_slider = gr.Slider(minimum=1, maximum=101, step=1, value=101, label="Select Frame")
+    preview = gr.Image(label="Selected Frame Preview", type="pil")
+    continue_btn = gr.Button("Continue from Selected Frame")
+    history_html = gr.HTML()
     
-    gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[output, history_html])
+    gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[output, history_html, frame_filenames_state, preview])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
+    frame_slider.change(update_preview, inputs=[frame_slider, frame_filenames_state], outputs=preview)
+    continue_btn.click(continue_generation, inputs=[prompt, frame_slider, frame_filenames_state, debug_state], outputs=[output, history_html, frame_filenames_state, preview])
     demo.load(update_history, outputs=history_html)
 
 demo.queue()
