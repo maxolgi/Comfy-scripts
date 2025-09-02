@@ -450,9 +450,9 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    gen_btn = gr.Button("Vidioze")
-    gr.Markdown("")
-    continue_btn = gr.Button("Continue")
+    with gr.Row():
+        gen_btn = gr.Button("Vidioze")
+        continue_btn = gr.Button("Continue")
     history_html = gr.HTML()
     
     gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[history_html, frame_filenames_state])
