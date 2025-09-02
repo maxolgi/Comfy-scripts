@@ -327,12 +327,26 @@ def get_all_videos(num_videos):
     return [v[1] for v in videos]
 
 def render_video_list(video_urls):
-    html = '<div style="display: flex; flex-direction: column;">'
+    html = '''
+    <style>
+        .video-card {
+            background: #222;
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
+    <div style="display: flex; flex-direction: column;">
+    '''
     for i, url in enumerate(video_urls):
-        video_id = f"video_{i}"
         html += f'''
-        <div style="position: relative; margin-bottom: 10px;">
-            <video id="{video_id}" controls autoplay="false" src="{url}" style="max-width: 100%; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;"></video>
+        <div class="video-card">
+            <video id="video_{i}" controls autoplay="false" src="{url}" style="max-width: 100%;"></video>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <button style="font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #444; color: white; border: none; cursor: pointer;" onclick="shareVideo('{url}')">Download/Share</button>
+                <button style="font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #444; color: white; border: none; cursor: pointer;">New Vid</button>
+            </div>
         </div>
         '''
     html += '''
@@ -360,28 +374,6 @@ def render_video_list(video_urls):
             a.click();
             document.body.removeChild(a);
         }
-        document.querySelectorAll('video').forEach(video => {
-            let touchTimeout;
-            let touchStartX, touchStartY;
-            video.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                touchStartX = e.touches[0].pageX;
-                touchStartY = e.touches[0].pageY;
-                touchTimeout = setTimeout(() => {
-                    shareVideo(video.src);
-                }, 500);
-            }, { passive: false });
-            video.addEventListener('touchmove', () => {
-                clearTimeout(touchTimeout);
-            });
-            video.addEventListener('touchend', () => {
-                clearTimeout(touchTimeout);
-            });
-            video.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                shareVideo(video.src);
-            });
-        });
     </script>
     </div>
     '''
