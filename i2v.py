@@ -332,14 +332,22 @@ def render_video_list(video_urls):
         video_id = f"video_{i}"
         html += f'''
         <div style="position: relative; margin-bottom: 10px;">
-            <video id="{video_id}" controls autoplay="false" src="{url}" style="max-width: 100%;"></video>
+            <video id="{video_id}" controls autoplay="false" src="{url}" style="max-width: 100%; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;"></video>
             <div id="context-menu-{video_id}" style="display: none; position: absolute; background: #333; color: white; border: 1px solid #555; border-radius: 4px; z-index: 1000;">
-                <div style="padding: 8px; cursor: pointer;" onclick="window.location.href='{url}&download=true'">Download to Camera Roll</div>
+                <div style="padding: 8px; cursor: pointer;" onclick="downloadVideo(\'{url}\')">Download to Camera Roll</div>
             </div>
         </div>
         '''
     html += '''
     <script>
+        function downloadVideo(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'video.mp4';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
         document.querySelectorAll('video').forEach(video => {
             const contextMenu = document.getElementById(`context-menu-${video.id}`);
             video.addEventListener('contextmenu', (e) => {
@@ -348,8 +356,33 @@ def render_video_list(video_urls):
                 contextMenu.style.left = `${e.pageX}px`;
                 contextMenu.style.top = `${e.pageY}px`;
             });
+            let touchTimeout;
+            let touchStartX, touchStartY;
+            video.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchStartX = e.touches[0].pageX;
+                touchStartY = e.touches[0].pageY;
+                touchTimeout = setTimeout(() => {
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = `${touchStartX}px`;
+                    contextMenu.style.top = `${touchStartY}px`;
+                }, 500);
+            });
+            video.addEventListener('touchmove', (e) => {
+                clearTimeout(touchTimeout);
+            });
+            video.addEventListener('touchend', (e) => {
+                clearTimeout(touchTimeout);
+            });
             document.addEventListener('click', () => {
                 contextMenu.style.display = 'none';
+            });
+            document.addEventListener('touchend', () => {
+                if (contextMenu.style.display === 'block') {
+                    setTimeout(() => {
+                        contextMenu.style.display = 'none';
+                    }, 100);
+                }
             });
         });
     </script>
