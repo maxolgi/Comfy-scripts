@@ -350,38 +350,22 @@ def update_history():
     video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
-def get_frame_image(filename):
-    url = f"{comfyui_public_url}/view?filename={filename}&subfolder=frames&type=output"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return Image.open(BytesIO(response.content))
-    return None
-
-def update_preview(selected, frame_filenames):
+def continue_generation(prompt, frame_filenames, debug):
     if not frame_filenames:
-        return None
-    idx = selected - 1
+        return update_history(), []
+    idx = 100
     if idx < 0 or idx >= len(frame_filenames):
-        return None
-    fn = frame_filenames[idx]
-    return get_frame_image(fn)
-
-def continue_generation(prompt, selected, frame_filenames, debug):
-    if not frame_filenames:
-        return "", update_history(), [], None
-    idx = selected - 1
-    if idx < 0 or idx >= len(frame_filenames):
-        return "", update_history(), [], None
+        return update_history(), []
     fn = frame_filenames[idx]
     response = requests.get(f"{comfyui_public_url}/view?filename={fn}&subfolder=frames&type=output")
     if response.status_code != 200:
-        return "", update_history(), [], None
+        return update_history(), []
     image = Image.open(BytesIO(response.content))
     return generate_video(prompt, image, debug)
 
 def generate_video(prompt, image, debug=False):
     if image is None:
-        return "", update_history(), [], None
+        return update_history(), []
     
     try:
         # Upload image
@@ -433,7 +417,7 @@ def generate_video(prompt, image, debug=False):
             time.sleep(2)
         
         if prompt_id not in history:
-            return "", update_history(), [], None
+            return update_history(), []
         
         # Parse exact video info
         node_output = history[prompt_id]["outputs"]["15"]
@@ -442,7 +426,6 @@ def generate_video(prompt, image, debug=False):
         subfolder = video_info.get("subfolder", "")
         type_ = video_info.get("type", "output")
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
-        new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
         
         # Parse frame filenames
         if "23" in history[prompt_id]["outputs"]:
@@ -451,17 +434,14 @@ def generate_video(prompt, image, debug=False):
         else:
             frame_filenames = []
         
-        # Get preview of last frame
-        preview_img = update_preview(101, frame_filenames) if frame_filenames else None
-        
         history_html = render_video_list(get_all_videos(max_history_videos))
         
-        return new_video_html, history_html, frame_filenames, preview_img
+        return history_html, frame_filenames
     except Exception as e:
         if debug:
             import traceback
             print(f"Debug: Exception details: {traceback.format_exc()}")
-        return "", update_history(), [], None
+        return update_history(), []
 
 with gr.Blocks(css="footer {display: none !important;}", js="""() => { const params = new URLSearchParams(window.location.search); if (!params.has('__theme')) { params.set('__theme', 'dark'); window.location.search = params.toString(); } const observer = new MutationObserver(() => { const modals = document.querySelectorAll('.gr-modal'); modals.forEach(modal => { if (modal.textContent.includes('connection might break')) { modal.style.display = 'none'; } }); }); observer.observe(document.body, { childList: true, subtree: true }); }""") as demo:
     image_state = gr.State(None)
@@ -472,17 +452,12 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
     gen_btn = gr.Button("Vidioze")
     gr.Markdown("")
-    output = gr.HTML(label="")
-    with gr.Row():
-        frame_slider = gr.Slider(minimum=1, maximum=101, step=1, value=101, label="Select Frame")
-    preview = gr.Image(label="Selected Frame Preview", type="pil")
-    continue_btn = gr.Button("Continue from Selected Frame")
+    continue_btn = gr.Button("Continue")
     history_html = gr.HTML()
     
-    gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[output, history_html, frame_filenames_state, preview])
+    gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[history_html, frame_filenames_state])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
-    frame_slider.change(update_preview, inputs=[frame_slider, frame_filenames_state], outputs=preview)
-    continue_btn.click(continue_generation, inputs=[prompt, frame_slider, frame_filenames_state, debug_state], outputs=[output, history_html, frame_filenames_state, preview])
+    continue_btn.click(continue_generation, inputs=[prompt, frame_filenames_state, debug_state], outputs=[history_html, frame_filenames_state])
     demo.load(update_history, outputs=history_html)
 
 demo.queue()
