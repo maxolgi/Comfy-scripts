@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "From any static input image, generate a dynamic video that adds intense, Incorporate dynamic camera movements throughout the video, focusing exclusively on energetic zooms that dive in close to highlight vibrant details of all prominent objects and pull back swiftly to reveal the full scene, creating a thrilling, immersive perspective.",
+      "text": "Beautiful young European woman with honey blonde hair gracefully turning her head back over shoulder, gentle smile, bright eyes looking at camera. Hair flowing in slow motion as she turns. Soft natural lighting, clean background, cinematic slow-motion portrait.",
       "clip": [
         "8",
         0
@@ -189,12 +189,12 @@ workflow = {
     "inputs": {
       "add_noise": "enable",
       "noise_seed": 1093964355475357,
-      "steps": 4,
+      "steps": 2,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
       "start_at_step": 0,
-      "end_at_step": 2,
+      "end_at_step": 1,
       "return_with_leftover_noise": "enable",
       "model": [
         "14:1370",
@@ -222,12 +222,12 @@ workflow = {
     "inputs": {
       "add_noise": "disable",
       "noise_seed": 0,
-      "steps": 4,
+      "steps": 2,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
-      "start_at_step": 2,
-      "end_at_step": 4,
+      "start_at_step": 1,
+      "end_at_step": 2,
       "return_with_leftover_noise": "disable",
       "model": [
         "14:1368",
@@ -321,21 +321,24 @@ def get_all_videos(num_videos):
                         subfolder = video_info.get("subfolder", "")
                         type_ = video_info.get("type", "output")
                         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
-                        videos.append((ts, video_url))
+                        videos.append((ts, video_url, filename))
     videos.sort(key=lambda x: x[0], reverse=True)
     videos = videos[:num_videos]
-    return [v[1] for v in videos]
+    return videos
 
-def render_video_list(video_urls):
+def render_video_list(videos):
     html = '<div style="display: flex; flex-direction: column;">'
-    for url in video_urls:
-        html += f'<video controls autoplay="false" src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
+    for idx, (ts, url, filename) in enumerate(videos):
+        html += f'<div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; background-color: #f9f9f9;">'
+        html += f'<video controls src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
+        html += f'<a href="{url}" download="{filename}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Download to Camera Roll</a>'
+        html += '</div>'
     html += '</div>'
     return html
 
 def update_history():
-    video_urls = get_all_videos(max_history_videos)
-    return render_video_list(video_urls)
+    videos = get_all_videos(max_history_videos)
+    return render_video_list(videos)
 
 def generate_video(prompt, image, debug=False):
     if image is None:
@@ -357,13 +360,9 @@ def generate_video(prompt, image, debug=False):
         
         # Update workflow
         workflow["22"]["inputs"]["image"] = uploaded_filename
-        fixed_positive = workflow["20"]["inputs"]["text"]
-        effective_positive = (prompt + " " + fixed_positive) if prompt else fixed_positive
-        workflow["20"]["inputs"]["text"] = effective_positive
-        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
-        workflow["9"]["inputs"]["text"] = fixed_negative
-        prefix = f"video/Gradio_{int(time.time())}"
-        workflow["15"]["inputs"]["filename_prefix"] = prefix
+        workflow["20"]["inputs"]["text"] = prompt if prompt else ""
+        prefix = f"Gradio_{int(time.time())}"
+        workflow["15"]["inputs"]["filename_prefix"] = f"video/{prefix}"
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
         
         # Queue prompt
@@ -401,10 +400,13 @@ def generate_video(prompt, image, debug=False):
         subfolder = video_info.get("subfolder", "")
         type_ = video_info.get("type", "output")
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
-        new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
+        new_video_html = f'<div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; background-color: #f9f9f9;">'
+        new_video_html += f'<video controls src="{video_url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
+        new_video_html += f'<a href="{video_url}" download="{filename}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Download to Camera Roll</a>'
+        new_video_html += '</div>'
         
-        video_urls = get_all_videos(max_history_videos)
-        history_html = render_video_list(video_urls)
+        videos = get_all_videos(max_history_videos)
+        history_html = render_video_list(videos)
         
         return new_video_html, history_html
     except Exception as e:
@@ -419,7 +421,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    gen_btn = gr.Button("videoze")
+    gen_btn = gr.Button("Vidioze")
     gr.Markdown("")
     history_html = gr.HTML()
     output = gr.HTML(label="")
