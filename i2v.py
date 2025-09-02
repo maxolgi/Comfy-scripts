@@ -419,7 +419,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    gen_btn = gr.Button("Vidioze")
+    gen_btn = gr.Button("videoze")
     gr.Markdown("")
     history_html = gr.HTML()
     output = gr.HTML(label="")
