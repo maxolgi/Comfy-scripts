@@ -333,13 +333,25 @@ def render_video_list(video_urls):
         html += f'''
         <div style="position: relative; margin-bottom: 10px;">
             <video id="{video_id}" controls autoplay="false" src="{url}" style="max-width: 100%; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;"></video>
-            <div id="context-menu-{video_id}" style="display: none; position: absolute; background: #333; color: white; border: 1px solid #555; border-radius: 4px; z-index: 1000;">
-                <div style="padding: 8px; cursor: pointer;" onclick="downloadVideo(\'{url}\')">Download to Camera Roll</div>
-            </div>
         </div>
         '''
     html += '''
     <script>
+        async function shareVideo(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const file = new File([blob], 'video.mp4', { type: 'video/mp4' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file] });
+                } else {
+                    downloadVideo(url);
+                }
+            } catch (error) {
+                console.error('Error sharing video:', error);
+                downloadVideo(url);
+            }
+        }
         function downloadVideo(url) {
             const a = document.createElement('a');
             a.href = url;
@@ -349,13 +361,6 @@ def render_video_list(video_urls):
             document.body.removeChild(a);
         }
         document.querySelectorAll('video').forEach(video => {
-            const contextMenu = document.getElementById(`context-menu-${video.id}`);
-            video.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                contextMenu.style.display = 'block';
-                contextMenu.style.left = `${e.pageX}px`;
-                contextMenu.style.top = `${e.pageY}px`;
-            });
             let touchTimeout;
             let touchStartX, touchStartY;
             video.addEventListener('touchstart', (e) => {
@@ -363,26 +368,18 @@ def render_video_list(video_urls):
                 touchStartX = e.touches[0].pageX;
                 touchStartY = e.touches[0].pageY;
                 touchTimeout = setTimeout(() => {
-                    contextMenu.style.display = 'block';
-                    contextMenu.style.left = `${touchStartX}px`;
-                    contextMenu.style.top = `${touchStartY}px`;
+                    shareVideo(video.src);
                 }, 500);
-            });
-            video.addEventListener('touchmove', (e) => {
+            }, { passive: false });
+            video.addEventListener('touchmove', () => {
                 clearTimeout(touchTimeout);
             });
-            video.addEventListener('touchend', (e) => {
+            video.addEventListener('touchend', () => {
                 clearTimeout(touchTimeout);
             });
-            document.addEventListener('click', () => {
-                contextMenu.style.display = 'none';
-            });
-            document.addEventListener('touchend', () => {
-                if (contextMenu.style.display === 'block') {
-                    setTimeout(() => {
-                        contextMenu.style.display = 'none';
-                    }, 100);
-                }
+            video.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                shareVideo(video.src);
             });
         });
     </script>
