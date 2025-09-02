@@ -18,6 +18,7 @@ parser.add_argument("listen_ip_port", type=str, help="IP:port for Gradio to list
 parser.add_argument("comfyui_ip_port", type=str, help="IP:port for ComfyUI API, e.g., 192.168.1.3:8888")
 parser.add_argument("--comfyui_public_url", type=str, default=None, help="Public URL for ComfyUI (e.g., for proxies)")
 parser.add_argument("--debug", action="store_true", help="Enable debug printing for API calls")
+parser.add_argument("--max_history_videos", type=int, default=1, help="Maximum number of history videos to display")
 args = parser.parse_args()
 
 listen_ip_port = args.listen_ip_port
@@ -27,6 +28,7 @@ server_port = int(server_port_str)
 COMFYUI_URL = f"http://{args.comfyui_ip_port}"
 comfyui_public_url = args.comfyui_public_url if args.comfyui_public_url else COMFYUI_URL
 debug = args.debug
+max_history_videos = args.max_history_videos
 
 # Hardcoded API workflow from api.json
 workflow = {
@@ -251,8 +253,8 @@ workflow = {
   },
   "14:1373": {
     "inputs": {
-      "width": 320,
-      "height": 480,
+      "width": 464,
+      "height": 688,
       "length": 101,
       "batch_size": 1,
       "positive": [
@@ -297,7 +299,7 @@ workflow = {
   }
 }
 
-def get_all_videos():
+def get_all_videos(num_videos):
     url = f"{COMFYUI_URL}/history"
     if debug:
         print(f"Debug: Sending GET to {url}")
@@ -321,6 +323,7 @@ def get_all_videos():
                         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
                         videos.append((ts, video_url))
     videos.sort(key=lambda x: x[0], reverse=True)
+    videos = videos[:num_videos]
     return [v[1] for v in videos]
 
 def render_video_list(video_urls):
@@ -331,7 +334,7 @@ def render_video_list(video_urls):
     return html
 
 def update_history():
-    video_urls = get_all_videos()
+    video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
 def generate_video(prompt, image, debug=False):
@@ -396,7 +399,7 @@ def generate_video(prompt, image, debug=False):
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
         new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
         
-        video_urls = get_all_videos()
+        video_urls = get_all_videos(max_history_videos)
         history_html = render_video_list(video_urls)
         
         return new_video_html, history_html
@@ -412,10 +415,10 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    gen_btn = gr.Button("Generate")
-    gr.Markdown("## History of Generated Videos")
+    gen_btn = gr.Button("Vidioze")
+    gr.Markdown("")
     history_html = gr.HTML()
-    output = gr.HTML(label="Generated Video")
+    output = gr.HTML(label="")
     
     gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[output, history_html])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
