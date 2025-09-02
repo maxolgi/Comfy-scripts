@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "Beautiful young European woman with honey blonde hair gracefully turning her head back over shoulder, gentle smile, bright eyes looking at camera. Hair flowing in slow motion as she turns. Soft natural lighting, clean background, cinematic slow-motion portrait.",
+      "text": "From any static input image, generate a dynamic video that adds intense, Incorporate dynamic camera movements throughout the video, focusing exclusively on energetic zooms that dive in close to highlight vibrant details of all prominent objects and pull back swiftly to reveal the full scene, creating a thrilling, immersive perspective.",
       "clip": [
         "8",
         0
@@ -189,12 +189,12 @@ workflow = {
     "inputs": {
       "add_noise": "enable",
       "noise_seed": 1093964355475357,
-      "steps": 2,
+      "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
       "start_at_step": 0,
-      "end_at_step": 1,
+      "end_at_step": 2,
       "return_with_leftover_noise": "enable",
       "model": [
         "14:1370",
@@ -222,12 +222,12 @@ workflow = {
     "inputs": {
       "add_noise": "disable",
       "noise_seed": 0,
-      "steps": 2,
+      "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
-      "start_at_step": 1,
-      "end_at_step": 2,
+      "start_at_step": 2,
+      "end_at_step": 4,
       "return_with_leftover_noise": "disable",
       "model": [
         "14:1368",
@@ -327,56 +327,10 @@ def get_all_videos(num_videos):
     return [v[1] for v in videos]
 
 def render_video_list(video_urls):
-    html = '''
-    <style>
-        .video-card {
-            background: #222;
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-    </style>
-    <div style="display: flex; flex-direction: column;">
-    '''
-    for i, url in enumerate(video_urls):
-        html += f'''
-        <div class="video-card">
-            <video id="video_{i}" controls autoplay="false" src="{url}" style="max-width: 100%;"></video>
-            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
-                <button style="font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #444; color: white; border: none; cursor: pointer;" onclick="shareVideo('{url}')">Download/Share</button>
-                <button style="font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #444; color: white; border: none; cursor: pointer;">New Vid</button>
-            </div>
-        </div>
-        '''
-    html += '''
-    <script>
-        async function shareVideo(url) {
-            try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                const file = new File([blob], 'video.mp4', { type: 'video/mp4' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file] });
-                } else {
-                    downloadVideo(url);
-                }
-            } catch (error) {
-                console.error('Error sharing video:', error);
-                downloadVideo(url);
-            }
-        }
-        function downloadVideo(url) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'video.mp4';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-    </script>
-    </div>
-    '''
+    html = '<div style="display: flex; flex-direction: column;">'
+    for url in video_urls:
+        html += f'<video controls autoplay="false" src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
+    html += '</div>'
     return html
 
 def update_history():
@@ -403,7 +357,11 @@ def generate_video(prompt, image, debug=False):
         
         # Update workflow
         workflow["22"]["inputs"]["image"] = uploaded_filename
-        workflow["20"]["inputs"]["text"] = prompt if prompt else ""
+        fixed_positive = workflow["20"]["inputs"]["text"]
+        effective_positive = (prompt + " " + fixed_positive) if prompt else fixed_positive
+        workflow["20"]["inputs"]["text"] = effective_positive
+        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
+        workflow["9"]["inputs"]["text"] = fixed_negative
         prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
@@ -461,7 +419,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    gen_btn = gr.Button("Vidioze")
+    gen_btn = gr.Button("videoze")
     gr.Markdown("")
     history_html = gr.HTML()
     output = gr.HTML(label="")
