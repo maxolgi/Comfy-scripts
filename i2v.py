@@ -418,8 +418,9 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
         new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
         
-        video_urls = get_all_videos(max_history_videos)
-        history_html = render_video_list(video_urls)
+        video_urls = get_all_videos(max_history_videos + 1)
+        history_urls = video_urls[1:]
+        history_html = render_video_list(history_urls)
         
         return new_video_html, history_html
     except Exception as e:
