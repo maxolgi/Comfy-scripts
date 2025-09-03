@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "",
+      "text": "ransform any static input image into a vibrant lively, action-packed scene generate a dynamic video. add objects and props according to the context",
       "clip": [
         "8",
         0
