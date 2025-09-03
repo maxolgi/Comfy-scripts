@@ -189,12 +189,12 @@ workflow = {
     "inputs": {
       "add_noise": "enable",
       "noise_seed": 1093964355475357,
-      "steps": 2,
+      "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
       "start_at_step": 0,
-      "end_at_step": 1,
+      "end_at_step": 2,
       "return_with_leftover_noise": "enable",
       "model": [
         "14:1370",
@@ -222,12 +222,12 @@ workflow = {
     "inputs": {
       "add_noise": "disable",
       "noise_seed": 0,
-      "steps": 2,
+      "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
-      "start_at_step": 1,
-      "end_at_step": 2,
+      "start_at_step": 2,
+      "end_at_step": 4,
       "return_with_leftover_noise": "disable",
       "model": [
         "14:1368",
