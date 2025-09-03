@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "Transform any static input image into a wildly fun and vibrant, action-packed video for kids of all ages",
+      "text": "From any static input image, generate a dynamic video that adds intense, roaring orange and red flames to all prominent objects. Ignite every visible element—whether structures, vehicles, furniture, or natural features—with vivid, crackling fire that spreads rapidly, producing thick black smoke and swirling embers. Animate the flames to leap and dance across surfaces, with sparks flying and heat distortion warping the air. Use dynamic camera movements: zoom in on burning details, pan across the spreading inferno, and tilt up to show flames against the sky. Emphasize a chaotic, thrilling vibe with sounds of crackling fire, shattering materials, and occasional explosive pops. Ensure every object is engulfed in intense, fiery destruction, creating a wild, universal spectacle of flame and motion.",
       "clip": [
         "8",
         0
@@ -373,7 +373,7 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
             extras.append(DANCE_PROMPT)
         effective_positive = (prompt + " " if prompt else "") + " ".join(extras) + (" " if extras else "") + fixed_positive
         workflow["20"]["inputs"]["text"] = effective_positive
-        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, ghost human people"
+        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
         workflow["9"]["inputs"]["text"] = fixed_negative
         prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
