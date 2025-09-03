@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "From any static input image, generate a dynamic video that adds intense, roaring orange and red flames to all prominent objects. Ignite every visible element—whether structures, vehicles, furniture, or natural features—with vivid, crackling fire that spreads rapidly, producing thick black smoke and swirling embers. Animate the flames to leap and dance across surfaces, with sparks flying and heat distortion warping the air. Use dynamic camera movements: zoom in on burning details, pan across the spreading inferno, and tilt up to show flames against the sky. Emphasize a chaotic, thrilling vibe with sounds of crackling fire, shattering materials, and occasional explosive pops. Ensure every object is engulfed in intense, fiery destruction, creating a wild, universal spectacle of flame and motion.",
+      "text": "",
       "clip": [
         "8",
         0
