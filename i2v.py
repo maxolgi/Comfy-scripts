@@ -30,7 +30,7 @@ comfyui_public_url = args.comfyui_public_url if args.comfyui_public_url else COM
 debug = args.debug
 max_history_videos = args.max_history_videos
 
-# Hardcoded API workflow from api.json
+# Hardcoded API workflow from api.json .
 workflow = {
   "8": {
     "inputs": {
