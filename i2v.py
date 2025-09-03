@@ -340,7 +340,7 @@ def update_history():
 def generate_video(prompt, image, debug=False):
     if image is None:
         return "", None
-    
+
     try:
         # Upload image
         buffered = BytesIO()
@@ -354,7 +354,7 @@ def generate_video(prompt, image, debug=False):
         if debug:
             print(f"Debug: Response status: {upload_response.status_code}, content: {upload_response.json() if upload_response.content else upload_response.text}")
         uploaded_filename = upload_response.json()["name"]
-        
+
         # Update workflow
         workflow["22"]["inputs"]["image"] = uploaded_filename
         fixed_positive = workflow["20"]["inputs"]["text"]
@@ -365,7 +365,7 @@ def generate_video(prompt, image, debug=False):
         prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
-        
+
         # Queue prompt
         prompt_data = {"prompt": workflow}
         url = f"{COMFYUI_URL}/prompt"
@@ -375,7 +375,7 @@ def generate_video(prompt, image, debug=False):
         if debug:
             print(f"Debug: Response status: {queue_response.status_code}, content: {queue_response.json() if queue_response.content else queue_response.text}")
         prompt_id = queue_response.json()["prompt_id"]
-        
+
         # Poll history with progress
         start_time = time.time()
         timeout = 300
@@ -390,10 +390,10 @@ def generate_video(prompt, image, debug=False):
             if prompt_id in history:
                 break
             time.sleep(2)
-        
+
         if prompt_id not in history:
             return "", None
-        
+
         # Parse exact video info
         node_output = history[prompt_id]["outputs"]["15"]
         video_info = node_output["images"][0]
@@ -402,10 +402,10 @@ def generate_video(prompt, image, debug=False):
         type_ = video_info.get("type", "output")
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
         new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
-        
+
         video_urls = get_all_videos(max_history_videos)
         history_html = render_video_list(video_urls)
-        
+
         return new_video_html, history_html
     except Exception as e:
         if debug:
@@ -423,7 +423,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     gr.Markdown("")
     history_html = gr.HTML()
     output = gr.HTML(label="")
-    
+
     gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[output, history_html])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
     demo.load(update_history, outputs=history_html)
