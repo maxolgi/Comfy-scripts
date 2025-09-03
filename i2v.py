@@ -299,6 +299,8 @@ workflow = {
   }
 }
 
+ORIGINAL_POSITIVE = workflow["20"]["inputs"]["text"]
+
 def get_all_videos(num_videos):
     url = f"{COMFYUI_URL}/history"
     if debug:
@@ -357,7 +359,7 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
         
         # Update workflow
         workflow["22"]["inputs"]["image"] = uploaded_filename
-        fixed_positive = workflow["20"]["inputs"]["text"]
+        fixed_positive = ORIGINAL_POSITIVE
         FIRE_PROMPT = "fire"
         WATER_PROMPT = "water"
         FUN_PROMPT = "fun"
