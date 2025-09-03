@@ -73,7 +73,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "Beautiful young European woman with honey blonde hair gracefully turning her head back over shoulder, gentle smile, bright eyes looking at camera. Hair flowing in slow motion as she turns. Soft natural lighting, clean background, cinematic slow-motion portrait.",
+      "text": "From any static input image, generate a dynamic video that adds intense, roaring orange and red flames to all prominent objects. Ignite every visible element—whether structures, vehicles, furniture, or natural features—with vivid, crackling fire that spreads rapidly, producing thick black smoke and swirling embers. Animate the flames to leap and dance across surfaces, with sparks flying and heat distortion warping the air. Use dynamic camera movements: zoom in on burning details, pan across the spreading inferno, and tilt up to show flames against the sky. Emphasize a chaotic, thrilling vibe with sounds of crackling fire, shattering materials, and occasional explosive pops. Ensure every object is engulfed in intense, fiery destruction, creating a wild, universal spectacle of flame and motion.",
       "clip": [
         "8",
         0
@@ -296,19 +296,6 @@ workflow = {
     "_meta": {
       "title": "Unet Loader (GGUF)"
     }
-  },
-  "23": {
-    "inputs": {
-      "filename_prefix": "frames/Gradio",
-      "images": [
-        "14:1365",
-        0
-      ]
-    },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
-    }
   }
 }
 
@@ -350,22 +337,9 @@ def update_history():
     video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
-def continue_generation(prompt, frame_filenames, debug):
-    if not frame_filenames:
-        return update_history(), []
-    idx = 100
-    if idx < 0 or idx >= len(frame_filenames):
-        return update_history(), []
-    fn = frame_filenames[idx]
-    response = requests.get(f"{comfyui_public_url}/view?filename={fn}&subfolder=frames&type=output")
-    if response.status_code != 200:
-        return update_history(), []
-    image = Image.open(BytesIO(response.content))
-    return generate_video(prompt, image, debug)
-
 def generate_video(prompt, image, debug=False):
     if image is None:
-        return update_history(), []
+        return "", None
     
     try:
         # Upload image
@@ -383,12 +357,13 @@ def generate_video(prompt, image, debug=False):
         
         # Update workflow
         workflow["22"]["inputs"]["image"] = uploaded_filename
-        workflow["20"]["inputs"]["text"] = prompt if prompt else ""
-        ts = int(time.time())
-        prefix = f"video/Gradio_{ts}"
+        fixed_positive = workflow["20"]["inputs"]["text"]
+        effective_positive = (prompt + " " + fixed_positive) if prompt else fixed_positive
+        workflow["20"]["inputs"]["text"] = effective_positive
+        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
+        workflow["9"]["inputs"]["text"] = fixed_negative
+        prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
-        frame_prefix = f"frames/Gradio_{ts}"
-        workflow["23"]["inputs"]["filename_prefix"] = frame_prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
         
         # Queue prompt
@@ -417,7 +392,7 @@ def generate_video(prompt, image, debug=False):
             time.sleep(2)
         
         if prompt_id not in history:
-            return update_history(), []
+            return "", None
         
         # Parse exact video info
         node_output = history[prompt_id]["outputs"]["15"]
@@ -426,38 +401,31 @@ def generate_video(prompt, image, debug=False):
         subfolder = video_info.get("subfolder", "")
         type_ = video_info.get("type", "output")
         video_url = f"{comfyui_public_url}/view?filename={filename}&subfolder={subfolder}&type={type_}"
+        new_video_html = f'<video controls autoplay="false" src="{video_url}" style="max-width: 100%;"></video>'
         
-        # Parse frame filenames
-        if "23" in history[prompt_id]["outputs"]:
-            frame_infos = history[prompt_id]["outputs"]["23"]["images"]
-            frame_filenames = [info["filename"] for info in frame_infos]
-        else:
-            frame_filenames = []
+        video_urls = get_all_videos(max_history_videos)
+        history_html = render_video_list(video_urls)
         
-        history_html = render_video_list(get_all_videos(max_history_videos))
-        
-        return history_html, frame_filenames
+        return new_video_html, history_html
     except Exception as e:
         if debug:
             import traceback
             print(f"Debug: Exception details: {traceback.format_exc()}")
-        return update_history(), []
+        return "", None
 
 with gr.Blocks(css="footer {display: none !important;}", js="""() => { const params = new URLSearchParams(window.location.search); if (!params.has('__theme')) { params.set('__theme', 'dark'); window.location.search = params.toString(); } const observer = new MutationObserver(() => { const modals = document.querySelectorAll('.gr-modal'); modals.forEach(modal => { if (modal.textContent.includes('connection might break')) { modal.style.display = 'none'; } }); }); observer.observe(document.body, { childList: true, subtree: true }); }""") as demo:
     image_state = gr.State(None)
     debug_state = gr.State(debug)
-    frame_filenames_state = gr.State([])
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
-    with gr.Row():
-        gen_btn = gr.Button("New Video")
-        continue_btn = gr.Button("Continue")
+    gen_btn = gr.Button("Vidioze")
+    gr.Markdown("")
     history_html = gr.HTML()
+    output = gr.HTML(label="")
     
-    gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[history_html, frame_filenames_state])
+    gen_btn.click(generate_video, inputs=[prompt, image_state, debug_state], outputs=[output, history_html])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
-    continue_btn.click(continue_generation, inputs=[prompt, frame_filenames_state, debug_state], outputs=[history_html, frame_filenames_state])
     demo.load(update_history, outputs=history_html)
 
 demo.queue()
