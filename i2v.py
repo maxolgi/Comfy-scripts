@@ -253,8 +253,8 @@ workflow = {
   },
   "14:1373": {
     "inputs": {
-      "width": 464,
-      "height": 688,
+      "width": 320,
+      "height": 480,
       "length": 101,
       "batch_size": 1,
       "positive": [
