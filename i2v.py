@@ -443,7 +443,7 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
             print(f"Debug: Exception details: {traceback.format_exc()}")
         return "", None
 
-with gr.Blocks(css="footer {display: none !important;}", js="""() => { const params = new URLSearchParams(window.location.search); if (!params.has('__theme')) { params.set('__theme', 'dark'); window.location.search = params.toString(); } const observer = new MutationObserver(() => { const modals = document.querySelectorAll('.gr-modal'); modals.forEach(modal => { if (modal.textContent.includes('connection might break')) { modal.style.display = 'none'; } }); }); observer.observe(document.body, { childList: true, subtree: true }); }""") as demo:
+with gr.Blocks(title="vyidd", css="footer {display: none !important;}", js="""() => { const params = new URLSearchParams(window.location.search); if (!params.has('__theme')) { params.set('__theme', 'dark'); window.location.search = params.toString(); } const observer = new MutationObserver(() => { const modals = document.querySelectorAll('.gr-modal'); modals.forEach(modal => { if (modal.textContent.includes('connection might break')) { modal.style.display = 'none'; } }); }); observer.observe(document.body, { childList: true, subtree: true }); }""") as demo:
     image_state = gr.State(None)
     debug_state = gr.State(debug)
     with gr.Row():
