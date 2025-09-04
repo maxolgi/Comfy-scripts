@@ -18,7 +18,7 @@ parser.add_argument("listen_ip_port", type=str, help="IP:port for Gradio to list
 parser.add_argument("comfyui_ip_port", type=str, help="IP:port for ComfyUI API, e.g., 192.168.1.3:8888")
 parser.add_argument("--comfyui_public_url", type=str, default=None, help="Public URL for ComfyUI (e.g., for proxies)")
 parser.add_argument("--debug", action="store_true", help="Enable debug printing for API calls")
-parser.add_argument("--max_history_videos", type=int, default=1, help="Maximum number of history videos to display")
+parser.add_argument("--max_history_videos", type=int, default=10, help="Maximum number of history videos to display")
 args = parser.parse_args()
 
 listen_ip_port = args.listen_ip_port
@@ -331,7 +331,7 @@ def get_all_videos(num_videos):
 def render_video_list(video_urls):
     html = '<div style="display: flex; flex-direction: column;">'
     for url in video_urls:
-        html += f'<video controls autoplay="false" src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
+        html += f'<video controls autoplay="false" preload="none" src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
     html += '</div>'
     return html
 
