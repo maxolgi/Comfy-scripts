@@ -339,22 +339,22 @@ def update_history():
     video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
-def generate_video(prompt, image, fire=False, water=False, fun=False, dance=False, debug=False, res_320x480=False, res_464x688=True, res_1280x720=False, res_1920x1080=False):
+def generate_video(prompt, image, fire=False, water=False, fun=False, dance=False, debug=False, resolution="320x480"):
     if image is None:
         return "", None
     
     try:
         # Determine resolution
-        if res_320x480:
+        if resolution == "320x480":
             width, height = 320, 480
-        elif res_464x688:
+        elif resolution == "464x688":
             width, height = 464, 688
-        elif res_1280x720:
+        elif resolution == "1280x720":
             width, height = 1280, 720
-        elif res_1920x1080:
+        elif resolution == "1920x1080":
             width, height = 1920, 1080
         else:
-            width, height = 464, 688
+            width, height = 320, 480
         
         # Upload image
         buffered = BytesIO()
@@ -409,7 +409,7 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
         start_time = time.time()
         timeout = 300
         while time.time() - start_time < timeout:
-            url = f"{COMFYUI_URL}/history/{prompt_id}"
+            url =f"{COMFYUI_URL}/history/{prompt_id}"
             if debug:
                 print(f"Debug: Sending GET to {url}")
             history_response = requests.get(url)
@@ -454,16 +454,13 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
         fun_checkbox = gr.Checkbox(label="Fun")
         dance_checkbox = gr.Checkbox(label="Dance")
     with gr.Row():
-        res_320x480 = gr.Checkbox(label="320x480", value=False)
-        res_464x688 = gr.Checkbox(label="464x688", value=True)
-        res_1280x720 = gr.Checkbox(label="1280x720", value=False)
-        res_1920x1080 = gr.Checkbox(label="1920x1080", value=False)
+        resolution = gr.Radio(choices=["320x480", "464x688", "1280x720", "1920x1080"], value="320x480", label="Resolution")
     gen_btn = gr.Button("vyidd")
     gr.Markdown("")
     history_html = gr.HTML()
     output = gr.HTML(label="")
     
-    gen_btn.click(generate_video, inputs=[prompt, image_state, fire_checkbox, water_checkbox, fun_checkbox, dance_checkbox, debug_state, res_320x480, res_464x688, res_1280x720, res_1920x1080], outputs=[output, history_html])
+    gen_btn.click(generate_video, inputs=[prompt, image_state, fire_checkbox, water_checkbox, fun_checkbox, dance_checkbox, debug_state, resolution], outputs=[output, history_html])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
     demo.load(update_history, outputs=history_html)
 
