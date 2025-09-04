@@ -331,7 +331,7 @@ def get_all_videos(num_videos):
 def render_video_list(video_urls):
     html = '<div style="display: flex; flex-direction: column;">'
     for url in video_urls:
-        html += f'<video controls autoplay="false" preload="none" src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
+        html += f'<video controls autoplay="false" preload="metadata" src="{url}" style="max-width: 100%; margin-bottom: 10px;"></video>'
     html += '</div>'
     return html
 
