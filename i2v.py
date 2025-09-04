@@ -253,8 +253,8 @@ workflow = {
   },
   "14:1373": {
     "inputs": {
-      "width": 320,
-      "height": 480,
+      "width": 464,
+      "height": 688,
       "length": 101,
       "batch_size": 1,
       "positive": [
@@ -339,11 +339,23 @@ def update_history():
     video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
-def generate_video(prompt, image, fire=False, water=False, fun=False, dance=False, debug=False):
+def generate_video(prompt, image, fire=False, water=False, fun=False, dance=False, debug=False, res_320x480=False, res_464x688=True, res_1280x720=False, res_1920x1080=False):
     if image is None:
         return "", None
     
     try:
+        # Determine resolution
+        if res_320x480:
+            width, height = 320, 480
+        elif res_464x688:
+            width, height = 464, 688
+        elif res_1280x720:
+            width, height = 1280, 720
+        elif res_1920x1080:
+            width, height = 1920, 1080
+        else:
+            width, height = 464, 688
+        
         # Upload image
         buffered = BytesIO()
         image.save(buffered, format="JPEG")
@@ -380,6 +392,8 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
         prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
+        workflow["14:1373"]["inputs"]["width"] = width
+        workflow["14:1373"]["inputs"]["height"] = height
         
         # Queue prompt
         prompt_data = {"prompt": workflow}
@@ -439,12 +453,17 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
         water_checkbox = gr.Checkbox(label="Water")
         fun_checkbox = gr.Checkbox(label="Fun")
         dance_checkbox = gr.Checkbox(label="Dance")
+    with gr.Row():
+        res_320x480 = gr.Checkbox(label="320x480", value=False)
+        res_464x688 = gr.Checkbox(label="464x688", value=True)
+        res_1280x720 = gr.Checkbox(label="1280x720", value=False)
+        res_1920x1080 = gr.Checkbox(label="1920x1080", value=False)
     gen_btn = gr.Button("vyidd")
     gr.Markdown("")
     history_html = gr.HTML()
     output = gr.HTML(label="")
     
-    gen_btn.click(generate_video, inputs=[prompt, image_state, fire_checkbox, water_checkbox, fun_checkbox, dance_checkbox, debug_state], outputs=[output, history_html])
+    gen_btn.click(generate_video, inputs=[prompt, image_state, fire_checkbox, water_checkbox, fun_checkbox, dance_checkbox, debug_state, res_320x480, res_464x688, res_1280x720, res_1920x1080], outputs=[output, history_html])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
     demo.load(update_history, outputs=history_html)
 
