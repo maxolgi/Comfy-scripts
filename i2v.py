@@ -456,7 +456,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
         fun_checkbox = gr.Checkbox(label="Fun")
         dance_checkbox = gr.Checkbox(label="Dance")
     with gr.Row():
-        resolution = gr.Radio(choices=["320x480", "464x688", "1280x720", "1920x1080"], value="320x480", label="Resolution")
+        resolution = gr.Radio(choices=["320x480", "464x688", "1280x720", "1920x1080"], value="320x480", label="Resolution", visible=False)
     gen_btn = gr.Button("vyidd")
     gr.Markdown("")
     history_html = gr.HTML()
