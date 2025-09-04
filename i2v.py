@@ -339,7 +339,7 @@ def update_history():
     video_urls = get_all_videos(max_history_videos)
     return render_video_list(video_urls)
 
-def generate_video(prompt, image, fire=False, water=False, fun=False, dance=False, debug=False, resolution="320x480"):
+def generate_video(prompt, image, fire=False, water=False, fun=False, dance=False, debug=False, resolution="320x480", negative_prompt=""):
     if image is None:
         return "", None
     
@@ -388,7 +388,8 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
         effective_positive = (prompt + " " if prompt else "") + " ".join(extras) + (" " if extras else "") + fixed_positive
         workflow["20"]["inputs"]["text"] = effective_positive
         fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
-        workflow["9"]["inputs"]["text"] = fixed_negative
+        effective_negative = (negative_prompt + " " if negative_prompt else "") + fixed_negative
+        workflow["9"]["inputs"]["text"] = effective_negative
         prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
         workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
@@ -448,6 +449,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     with gr.Row():
         image_input = gr.Image(sources=["upload"], type="pil", interactive=True, show_label=False, container=False)
     prompt = gr.Textbox(placeholder="Optional text prompt", label="", container=False)
+    negative_prompt = gr.Textbox(placeholder="Optional negative text prompt", label="", container=False)
     with gr.Row():
         fire_checkbox = gr.Checkbox(label="Fire")
         water_checkbox = gr.Checkbox(label="Water")
@@ -460,7 +462,7 @@ with gr.Blocks(css="footer {display: none !important;}", js="""() => { const par
     history_html = gr.HTML()
     output = gr.HTML(label="")
     
-    gen_btn.click(generate_video, inputs=[prompt, image_state, fire_checkbox, water_checkbox, fun_checkbox, dance_checkbox, debug_state, resolution], outputs=[output, history_html])
+    gen_btn.click(generate_video, inputs=[prompt, image_state, fire_checkbox, water_checkbox, fun_checkbox, dance_checkbox, debug_state, resolution, negative_prompt], outputs=[output, history_html])
     image_input.change(fn=lambda img: img, inputs=image_input, outputs=image_state)
     demo.load(update_history, outputs=history_html)
 
