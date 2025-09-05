@@ -32,21 +32,11 @@ max_history_videos = args.max_history_videos
 
 # Hardcoded API workflow from api.json
 workflow = {
-  "8": {
-    "inputs": {
-      "clip_name": "umt5-xxl-encoder-Q3_K_M.gguf",
-      "type": "wan"
-    },
-    "class_type": "CLIPLoaderGGUF",
-    "_meta": {
-      "title": "CLIPLoader (GGUF)"
-    }
-  },
   "9": {
     "inputs": {
       "text": "",
       "clip": [
-        "8",
+        "41",
         0
       ]
     },
@@ -62,7 +52,7 @@ workflow = {
       "codec": "auto",
       "video_preview": "",
       "video": [
-        "14:1366",
+        "29",
         0
       ]
     },
@@ -73,9 +63,9 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "ransform any static input image into a vibrant lively, action-packed scene generate a dynamic video. add objects and props according to the context",
+      "text": "transform any static input image into a vibrant lively, action-packed scene generate a dynamic video. add objects and props according to the context",
       "clip": [
-        "8",
+        "41",
         0
       ]
     },
@@ -93,14 +83,14 @@ workflow = {
       "title": "Load Image"
     }
   },
-  "14:1365": {
+  "23": {
     "inputs": {
       "samples": [
-        "14:1376",
+        "31",
         0
       ],
       "vae": [
-        "14:1377",
+        "42",
         0
       ]
     },
@@ -109,11 +99,11 @@ workflow = {
       "title": "VAE Decode"
     }
   },
-  "14:1368": {
+  "24": {
     "inputs": {
       "shift": 5.000000000000001,
       "model": [
-        "14:1372",
+        "26",
         0
       ]
     },
@@ -122,11 +112,11 @@ workflow = {
       "title": "ModelSamplingSD3"
     }
   },
-  "14:1370": {
+  "25": {
     "inputs": {
       "shift": 5.000000000000001,
       "model": [
-        "14:1375",
+        "27",
         0
       ]
     },
@@ -135,12 +125,12 @@ workflow = {
       "title": "ModelSamplingSD3"
     }
   },
-  "14:1372": {
+  "26": {
     "inputs": {
       "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
       "strength_model": 1.0000000000000002,
       "model": [
-        "14:1371",
+        "40",
         0
       ]
     },
@@ -149,12 +139,12 @@ workflow = {
       "title": "LoraLoaderModelOnly"
     }
   },
-  "14:1375": {
+  "27": {
     "inputs": {
       "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors",
       "strength_model": 1.0000000000000002,
       "model": [
-        "14:1374",
+        "39",
         0
       ]
     },
@@ -163,20 +153,11 @@ workflow = {
       "title": "LoraLoaderModelOnly"
     }
   },
-  "14:1377": {
-    "inputs": {
-      "vae_name": "Wan2.1_VAE.safetensors"
-    },
-    "class_type": "VAELoader",
-    "_meta": {
-      "title": "Load VAE"
-    }
-  },
-  "14:1366": {
+  "29": {
     "inputs": {
       "fps": 16,
       "images": [
-        "14:1365",
+        "23",
         0
       ]
     },
@@ -185,10 +166,10 @@ workflow = {
       "title": "Create Video"
     }
   },
-  "14:1369": {
+  "30": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 1093964355475357,
+      "noise_seed": 1041136179039537,
       "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
@@ -197,19 +178,19 @@ workflow = {
       "end_at_step": 2,
       "return_with_leftover_noise": "enable",
       "model": [
-        "14:1370",
+        "25",
         0
       ],
       "positive": [
-        "14:1373",
+        "32",
         0
       ],
       "negative": [
-        "14:1373",
+        "32",
         1
       ],
       "latent_image": [
-        "14:1373",
+        "32",
         2
       ]
     },
@@ -218,7 +199,7 @@ workflow = {
       "title": "KSampler (Advanced)"
     }
   },
-  "14:1376": {
+  "31": {
     "inputs": {
       "add_noise": "disable",
       "noise_seed": 0,
@@ -230,19 +211,19 @@ workflow = {
       "end_at_step": 4,
       "return_with_leftover_noise": "disable",
       "model": [
-        "14:1368",
+        "24",
         0
       ],
       "positive": [
-        "14:1373",
+        "32",
         0
       ],
       "negative": [
-        "14:1373",
+        "32",
         1
       ],
       "latent_image": [
-        "14:1369",
+        "30",
         0
       ]
     },
@@ -251,10 +232,10 @@ workflow = {
       "title": "KSampler (Advanced)"
     }
   },
-  "14:1373": {
+  "32": {
     "inputs": {
-      "width": 464,
-      "height": 688,
+      "width": 320,
+      "height": 480,
       "length": 101,
       "batch_size": 1,
       "positive": [
@@ -266,7 +247,7 @@ workflow = {
         0
       ],
       "vae": [
-        "14:1377",
+        "42",
         0
       ],
       "start_image": [
@@ -279,22 +260,44 @@ workflow = {
       "title": "WanImageToVideo"
     }
   },
-  "14:1374": {
+  "39": {
     "inputs": {
-      "unet_name": "Wan2.2-I2V-A14B-HighNoise-Q3_K_M.gguf"
+      "unet_name": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
     },
-    "class_type": "UnetLoaderGGUF",
+    "class_type": "UNETLoader",
     "_meta": {
-      "title": "Unet Loader (GGUF)"
+      "title": "Load Diffusion Model"
     }
   },
-  "14:1371": {
+  "40": {
     "inputs": {
-      "unet_name": "Wan2.2-I2V-A14B-LowNoise-Q3_K_M.gguf"
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
     },
-    "class_type": "UnetLoaderGGUF",
+    "class_type": "UNETLoader",
     "_meta": {
-      "title": "Unet Loader (GGUF)"
+      "title": "Load Diffusion Model"
+    }
+  },
+  "41": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "42": {
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
     }
   }
 }
@@ -392,9 +395,9 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
         workflow["9"]["inputs"]["text"] = effective_negative
         prefix = f"video/Gradio_{int(time.time())}"
         workflow["15"]["inputs"]["filename_prefix"] = prefix
-        workflow["14:1369"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
-        workflow["14:1373"]["inputs"]["width"] = width
-        workflow["14:1373"]["inputs"]["height"] = height
+        workflow["30"]["inputs"]["noise_seed"] = random.randint(0, 2**64 - 1)
+        workflow["32"]["inputs"]["width"] = width
+        workflow["32"]["inputs"]["height"] = height
         
         # Queue prompt
         prompt_data = {"prompt": workflow}
