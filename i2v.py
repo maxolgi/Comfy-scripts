@@ -63,7 +63,7 @@ workflow = {
   },
   "20": {
     "inputs": {
-      "text": "transform any static input image into a vibrant lively, action-packed scene generate a dynamic video. add objects and props according to the context",
+      "text": "",
       "clip": [
         "41",
         0
@@ -390,7 +390,7 @@ def generate_video(prompt, image, fire=False, water=False, fun=False, dance=Fals
             extras.append(DANCE_PROMPT)
         effective_positive = (prompt + " " if prompt else "") + " ".join(extras) + (" " if extras else "") + fixed_positive
         workflow["20"]["inputs"]["text"] = effective_positive
-        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW, adding people and actors thatwere not requested"
+        fixed_negative = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走, NSFW"
         effective_negative = (negative_prompt + " " if negative_prompt else "") + fixed_negative
         workflow["9"]["inputs"]["text"] = effective_negative
         prefix = f"video/Gradio_{int(time.time())}"
