@@ -9,7 +9,7 @@ while true; do
     prev="$current"
     counter=0
   fi
-  if [ $counter -ge 20 ]; then
+  if [ $counter -ge 30 ]; then
     runpodctl remove pod $RUNPOD_POD_ID
     exit 0
   fi
