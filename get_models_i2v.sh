@@ -6,9 +6,8 @@ wget -q --directory-prefix=/workspace/ComfyUI/models/loras https://huggingface.c
 wget -q --directory-prefix=/workspace/ComfyUI/models/text_encoders https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors &
 wget -q --directory-prefix=/workspace/ComfyUI/models/diffusion_models https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors &
 wget -q --directory-prefix=/workspace/ComfyUI/models/diffusion_models https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors &
-wget -q --directory-prefix=/workspace/ComfyUI/models/vae https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors
-
-
+#wget -q --directory-prefix=/workspace/ComfyUI/models/vae https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors &
+wget -q --directory-prefix=/workspace/ComfyUI/models/vae https://huggingface.co/calcuis/wan-gguf/resolve/main/wan_2.1_vae_fp8_e4m3fn.safetensors &
 wget -q --directory-prefix=/workspace/ComfyUI/models/text_encoders https://huggingface.co/ComfyUI-Wiki/t5-base/resolve/main/t5-base.safetensors &
 wget -q --directory-prefix=/workspace/ComfyUI/models/text_encoders https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors &
 wget -q --directory-prefix=/workspace/ComfyUI/models/loras https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors &
